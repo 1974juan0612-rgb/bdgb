@@ -1,0 +1,80 @@
+{
+  "id": "youtube-automator",
+  "nombre": "Automator de YouTube",
+  "version": "1.0",
+  "estado": "activo",
+
+  "schedule": {
+    "tipo": "semanal",
+    "dia": "lunes",
+    "hora": "09:00",
+    "timezone": "America/Mexico_City"
+  },
+
+  "herramientas": {
+    "python3": {
+      "ruta": "python3",
+      "args": ["{script}", "{args}"]
+    },
+    "notebooklm": {
+      "ruta": "python3",
+      "args": ["/scripts/notebooklm.py", "--topic", "{tema}"]
+    },
+    "godot": {
+      "ruta": "C:/tools/godot.exe",
+      "args": ["--script", "{script}", "--output", "{output}"]
+    },
+    "ffmpeg": {
+      "ruta": "ffmpeg",
+      "args": ["-i", "{input}", "{output}"]
+    },
+    "youtube-upload": {
+      "ruta": "youtube-upload",
+      "args": ["--file", "{video}", "--title", "{titulo}", "--token", "{token}"]
+    }
+  },
+
+  "pipeline": {
+    "scraper_trends": {
+      "tool": "python3",
+      "script": "/scripts/google_trends.py",
+      "output": "/tmp/tendencias.json"
+    },
+    "bdgb_selecciona_tema": {
+      "tool": "bdgb",
+      "accion": "search_hybrid",
+      "query": "tendencia reciente no tratada",
+      "output": "/tmp/tema.json"
+    },
+    "notebooklm_genera_guion": {
+      "tool": "notebooklm",
+      "tema": "{tema_seleccionado}",
+      "output": "/tmp/guion.md"
+    },
+    "godot_genera_video": {
+      "tool": "godot",
+      "script": "/scripts/renderizar.gd",
+      "guion": "/tmp/guion.md",
+      "output": "/tmp/video_final.mp4"
+    },
+    "youtube_subir": {
+      "tool": "youtube-upload",
+      "video": "/tmp/video_final.mp4",
+      "output": null
+    }
+  },
+
+  "estado_actual": {
+    "ultima_ejecucion": null,
+    "ultimo_tema": null,
+    "ultimo_video_id": null,
+    "proxima_ejecucion": "2026-06-08T09:00:00"
+  },
+
+  "metricas": {
+    "ejecuciones_totales": 0,
+    "exitosas": 0,
+    "fallidas": 0,
+    "ultimo_score": null
+  }
+}

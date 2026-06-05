@@ -16,6 +16,7 @@ add_executable(bdgb
     src/search.c
     src/learning.c
     src/nlp.c
+    src/agent.c
 )
 
 if(WIN32)

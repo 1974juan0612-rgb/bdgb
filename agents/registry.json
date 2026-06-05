@@ -1,0 +1,38 @@
+{
+  "version": "1.0",
+  "_desc": "Registro maestro de todos los agentes/automatizaciones.",
+  "agentes": [
+    {
+      "id": "youtube-automator",
+      "nombre": "Automator de YouTube",
+      "descripcion": "Busca tendencias, genera guion con IA, crea video y lo publica.",
+      "estado": "activo",
+      "creado": "2026-06-05",
+      "ultima_ejecucion": null,
+      "schedule": {
+        "tipo": "semanal",
+        "dia": "lunes",
+        "hora": "09:00"
+      },
+      "pipeline": [
+        "scraper_trends",
+        "bdgb_selecciona_tema",
+        "notebooklm_genera_guion",
+        "godot_genera_video",
+        "youtube_subir"
+      ],
+      "herramientas": [
+        "python3",
+        "notebooklm",
+        "godot",
+        "ffmpeg",
+        "youtube-upload"
+      ],
+      "metricas": {
+        "ejecuciones": 0,
+        "ultimo_rank": null,
+        "mejor_video_visitas": null
+      }
+    }
+  ]
+}
