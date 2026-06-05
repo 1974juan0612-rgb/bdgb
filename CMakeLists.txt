@@ -15,6 +15,7 @@ add_executable(bdgb
     src/concept_graph.c
     src/search.c
     src/learning.c
+    src/nlp.c
 )
 
 if(WIN32)

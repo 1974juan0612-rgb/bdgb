@@ -3,6 +3,7 @@
 #include "concept_graph.h"
 #include "search.h"
 #include "learning.h"
+#include "nlp.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -47,62 +48,28 @@ static void init_semantics(void) {
     add_concept_edge(4004, 1001, 210, REL_EJEMPLO);
 }
 
-static int pred_simetrico(const bdgb_props_t *p) { return p->simetria; }
-
 static int cmp_score(const void *a, const void *b) {
     int sa = ((const SearchResult*)a)->score;
     int sb = ((const SearchResult*)b)->score;
     return (sa < sb) - (sa > sb);
 }
 
-static void run_session(int session_num) {
-    printf("\n");
-    printf("╔══════════════════════════════════════╗\n");
-    printf("║     SESION DE APRENDIZAJE #%d          ║\n", session_num);
-    printf("╚══════════════════════════════════════╝\n\n");
+static void run_query(const char *label, const char *query) {
+    printf(">>> \"%s\"\n", query);
+    printf("    %s\n\n", label);
 
     SearchResult results[MAX_RESULTS];
-    int n;
-
-    printf("Busqueda: 'belleza (1001) + simetrico + atractor 9'\n");
-    n = search_hybrid(1001, pred_simetrico, 9, 1, results, MAX_RESULTS);
+    int n = nlp_search(query, results, MAX_RESULTS);
     reinforce_results(results, n);
     qsort(results, n, sizeof(SearchResult), cmp_score);
-    for (int i = 0; i < n; i++) print_search_result(&results[i]);
 
-    printf("\nBusqueda: 'resistencia (2002) cerca del atractor 7'\n");
-    n = search_hybrid(2002, NULL, 7, 1, results, MAX_RESULTS);
-    reinforce_results(results, n);
-    qsort(results, n, sizeof(SearchResult), cmp_score);
-    for (int i = 0; i < n; i++) print_search_result(&results[i]);
-
-    printf("\nBusqueda profunda desde belleza (profundidad=1):\n");
-    n = search_semantic_deep(1001, 1, results, MAX_RESULTS);
-    reinforce_results(results, n);
-    qsort(results, n, sizeof(SearchResult), cmp_score);
-    for (int i = 0; i < n; i++) print_search_result(&results[i]);
-
-    printf("\n>> Nodo mas usado hasta ahora: #%u (%lu usos)\n",
-           (unsigned)get_node_usage(9) > get_node_usage(7) ? 9 : 7,
-           (unsigned long)(get_node_usage(9) > get_node_usage(7) ?
-                           get_node_usage(9) : get_node_usage(7)));
-}
-
-static void show_usage_table(void) {
-    printf("\n=== TABLA DE USO ACUMULADO ===\n\n");
-    printf("Nodo  Usos     Concepto  Usos\n");
-    printf("────  ───────  ────────  ───────\n");
-    for (uint8_t id = 0; id < BDGB_GRID_NODES; id++) {
-        uint32_t nu = get_node_usage(id);
-        if (nu > 0) {
-            printf(" #%2u  %7lu", id, (unsigned long)nu);
-            if (id <= 4) {
-                uint16_t cids[] = {1001, 2002, 3003, 4004};
-                uint32_t cu = get_concept_usage(cids[id]);
-                printf("     C%04u  %7lu", cids[id], (unsigned long)cu);
-            }
-            printf("\n");
-        }
+    if (n == 0) {
+        printf("    (sin resultados)\n\n");
+        return;
+    }
+    for (int i = 0; i < n; i++) {
+        printf("    ");
+        print_search_result(&results[i]);
     }
     printf("\n");
 }
@@ -113,26 +80,32 @@ int main(void) {
     semantic_init(DATA_PATH);
     concept_graph_init(DATA_PATH);
     learning_init(DATA_PATH);
+    nlp_init();
 
     init_system();
     init_semantics();
 
-    printf("=== BDGB: APRENDIZAJE ADAPTATIVO ===\n\n");
+    printf("=== BDGB: LENGUAJE NATURAL ===\n\n");
 
-    for (int s = 1; s <= 3; s++) {
-        run_session(s);
-        if (s < 3) {
-            printf("\nPresiona Enter para siguiente sesion...\n");
-            getchar();
-        }
-    }
+    run_query("belleza + simetrico", "belleza simetrico");
+    run_query("resistencia + denso", "resistencia densa");
+    printf("Presiona Enter...\n"); getchar();
 
-    printf("\nAplicando decaimiento (factor=0.95)...\n");
-    decay_all(0.95f);
+    run_query("belleza + estable (atractor)", "belleza estable");
+    run_query("simetrico + cerca atractor 9", "simetrico cerca9");
+    printf("Presiona Enter...\n"); getchar();
+
+    run_query("interiores simetricos", "interior simetrico");
+    run_query("esquinas densas", "esquina denso");
+    run_query("borde cerca atractor 7", "borde cerca7");
+    printf("Presiona Enter...\n"); getchar();
+
+    run_query("volumen + interior", "volumen interior");
+    run_query("simetria + esquina", "simetria esquina");
+    run_query("todos los atractores", "estable");
+
     save_usage();
 
-    show_usage_table();
-
-    printf("=== BDGB con aprendizaje adaptativo lista ===\n");
+    printf("=== BDGB con lenguaje natural lista ===\n");
     return 0;
 }
