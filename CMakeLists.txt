@@ -4,7 +4,7 @@ project(bdgb C)
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-include_directories(include)
+include_directories(include crypt)
 
 add_executable(bdgb
     src/main.c
@@ -17,6 +17,7 @@ add_executable(bdgb
     src/learning.c
     src/nlp.c
     src/agent.c
+    crypt/bdgb_crypt.c
 )
 
 add_executable(bdgb_test
@@ -30,6 +31,7 @@ add_executable(bdgb_test
     src/learning.c
     src/nlp.c
     src/agent.c
+    crypt/bdgb_crypt.c
 )
 
 if(WIN32)

@@ -1,4 +1,5 @@
 #include "bdgb.h"
+#include "bdgb_crypt.h"
 #include "semantics.h"
 #include "concept_graph.h"
 #include "search.h"
@@ -226,12 +227,35 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], "--init") == 0) { clear_data(); init_system(); init_semantics(); printf("{\"status\":\"ok\"}\n"); return 0; }
     if (strcmp(argv[1], "--supervisor-tick") == 0) { agent_init(); agent_supervisor_tick(); return 0; }
 
+    if (strcmp(argv[1], "--encrypt") == 0 && argc >= 4) {
+        return bdgb_encrypt_file(argv[2], argv[3], argc > 4 ? argv[4] : "bdgb-default-key");
+    }
+    if (strcmp(argv[1], "--decrypt") == 0 && argc >= 4) {
+        return bdgb_decrypt_file(argv[2], argv[3], argc > 4 ? argv[4] : "bdgb-default-key");
+    }
+    if (strcmp(argv[1], "--hash") == 0 && argc >= 3) {
+        srand((unsigned)time(NULL));
+        uint8_t iv[BDGB_CRYPT_IV_SIZE];
+        bdgb_crypt_iv_generate(iv);
+        BDGBCryptCtx ctx;
+        bdgb_crypt_init(&ctx, argv[2], iv);
+        uint8_t hash[16];
+        bdgb_crypt_keystream(&ctx, hash, 16);
+        printf("BDGB-HASH: ");
+        for (int i = 0; i < 16; i++) printf("%02x", hash[i]);
+        printf("\n");
+        return 0;
+    }
+
     fprintf(stderr, "Uso: bdgb [--data-path <path>] <comando>\n");
-    fprintf(stderr, "  (sin args)    modo interactivo\n");
-    fprintf(stderr, "  --search <q>  busqueda NLP, salida JSON\n");
-    fprintf(stderr, "  --export-nodes  dump JSON de todos los nodos\n");
+    fprintf(stderr, "  (sin args)     modo interactivo\n");
+    fprintf(stderr, "  --search <q>   busqueda NLP, salida JSON\n");
+    fprintf(stderr, "  --export-nodes dump JSON de todos los nodos\n");
     fprintf(stderr, "  --add-concept <n> <c> <w> <r>\n");
-    fprintf(stderr, "  --agent-run <id>  ejecuta pipeline de agente\n");
+    fprintf(stderr, "  --agent-run <id> ejecuta pipeline de agente\n");
     fprintf(stderr, "  --init         limpia e inicializa datos\n");
+    fprintf(stderr, "  --encrypt <in> <out> [key]  cifra archivo con BDGB-KAPREKAR\n");
+    fprintf(stderr, "  --decrypt <in> <out> [key]  descifra archivo\n");
+    fprintf(stderr, "  --hash <text>  genera hash BDGB de 16 bytes\n");
     return 1;
 }

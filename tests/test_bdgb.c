@@ -1,4 +1,5 @@
 #include "bdgb.h"
+#include "bdgb_crypt.h"
 #include "semantics.h"
 #include "concept_graph.h"
 #include "search.h"
@@ -238,6 +239,86 @@ static void test_compute_props(void) {
     PASS();
 }
 
+static void test_crypt_init(void) {
+    TEST("crypt init from password");
+    BDGBCryptCtx ctx;
+    uint8_t iv[8] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
+    int r = bdgb_crypt_init(&ctx, "test-password", iv);
+    ASSERT(r == 0, "init should succeed");
+    ASSERT(ctx.seed != 0, "seed should be non-zero");
+    PASS();
+}
+
+static void test_crypt_keystream_differs(void) {
+    TEST("crypt keystream different with different passwords/ivs");
+    uint8_t iv1[8] = {0x01,0x02,0x03,0x04,0x05,0x06,0x07,0x08};
+    uint8_t iv2[8] = {0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01};
+    BDGBCryptCtx ctx1, ctx2;
+    bdgb_crypt_init(&ctx1, "alpha", iv1);
+    bdgb_crypt_init(&ctx2, "omega", iv2);
+    uint8_t ks1[32], ks2[32];
+    bdgb_crypt_keystream(&ctx1, ks1, 32);
+    bdgb_crypt_keystream(&ctx2, ks2, 32);
+    ASSERT(memcmp(ks1, ks2, 32) != 0, "keystreams with different keys should differ");
+    PASS();
+}
+
+static void test_crypt_encrypt_decrypt(void) {
+    TEST("crypt round-trip encrypt/decrypt");
+    uint8_t plain[] = "HELLO BDGB CRYPT! THIS IS A TEST MESSAGE 12345";
+    size_t len = strlen((char*)plain) + 1;
+    uint8_t *buf = (uint8_t*)malloc(len);
+    memcpy(buf, plain, len);
+
+    BDGBCryptCtx ctx;
+    uint8_t iv[8] = {0xFF,0xEE,0xDD,0xCC,0xBB,0xAA,0x99,0x88};
+    bdgb_crypt_init(&ctx, "test-key", iv);
+    bdgb_crypt_buffer(&ctx, buf, len);
+
+    ASSERT(memcmp(buf, plain, len) != 0, "ciphertext differs from plaintext");
+
+    BDGBCryptCtx ctx2;
+    bdgb_crypt_init(&ctx2, "test-key", iv);
+    bdgb_crypt_buffer(&ctx2, buf, len);
+
+    ASSERT(memcmp(buf, plain, len) == 0, "decrypted matches original");
+    free(buf);
+    PASS();
+}
+
+static void test_crypt_file_roundtrip(void) {
+    TEST("crypt file round-trip");
+    const char *orig = "bdgb_crypt_test_orig.txt";
+    const char *enc  = "bdgb_crypt_test_enc.bdgb";
+    const char *dec  = "bdgb_crypt_test_dec.txt";
+
+    FILE *f = fopen(orig, "w");
+    ASSERT(f != NULL, "create orig file");
+    fprintf(f, "BDGB CRYPT FILE TEST - masa madre encryptada!");
+    fclose(f);
+
+    int r = bdgb_encrypt_file(orig, enc, "clave-secreta");
+    ASSERT(r == 0, "encrypt should succeed");
+
+    r = bdgb_decrypt_file(enc, dec, "clave-secreta");
+    ASSERT(r == 0, "decrypt should succeed");
+
+    FILE *fa = fopen(orig, "r");
+    FILE *fb = fopen(dec, "r");
+    ASSERT(fa && fb, "both files exist");
+    int eq = 1;
+    int ca, cb;
+    do {
+        ca = fgetc(fa); cb = fgetc(fb);
+        if (ca != cb) { eq = 0; break; }
+    } while (ca != EOF);
+    fclose(fa); fclose(fb);
+    ASSERT(eq, "decrypted file matches original");
+
+    remove(orig); remove(enc); remove(dec);
+    PASS();
+}
+
 static void run_all_tests(void) {
     printf("=== BDGB TESTS ===\n\n");
 
@@ -256,6 +337,10 @@ static void run_all_tests(void) {
     test_search_hybrid();
     test_search_by_predicate();
     test_compute_props();
+    test_crypt_init();
+    test_crypt_keystream_differs();
+    test_crypt_encrypt_decrypt();
+    test_crypt_file_roundtrip();
 
     printf("\n=== RESULTADOS: %d/%d PASS, %d FAIL ===\n",
            tests_pass, tests_pass + tests_fail, tests_fail);
