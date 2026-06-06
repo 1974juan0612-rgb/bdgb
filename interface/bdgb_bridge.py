@@ -8,11 +8,14 @@ import os
 import subprocess
 import struct
 
+import platform
+
 BDGB_ROOT = os.environ.get(
     "BDGB_ROOT",
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 )
-BDGB_EXE = os.path.join(BDGB_ROOT, "build", "bdgb.exe")
+_BDGB_BIN = "bdgb.exe" if platform.system() == "Windows" else "bdgb"
+BDGB_EXE = os.path.join(BDGB_ROOT, "build", _BDGB_BIN)
 DATA_PATH = os.path.join(BDGB_ROOT, "data")
 NODE_FILE = os.path.join(DATA_PATH, "nodes.dat")
 
@@ -29,7 +32,7 @@ def _run_cmd(*args):
             return {}
         return json.loads(r.stdout)
     except FileNotFoundError:
-        return {"error": f"bdgb.exe not found at {BDGB_EXE}"}
+        return {"error": f"engine not found at {BDGB_EXE}"}
     except json.JSONDecodeError:
         return {"error": "invalid JSON from engine", "raw": r.stdout}
     except subprocess.TimeoutExpired:

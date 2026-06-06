@@ -16,8 +16,10 @@ import sys
 import time
 from datetime import datetime
 
+import platform
 BDGB_ROOT = os.environ.get("BDGB_ROOT", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-BDGB_EXE = os.path.join(BDGB_ROOT, "build", "bdgb.exe")
+_BDGB_BIN = "bdgb.exe" if platform.system() == "Windows" else "bdgb"
+BDGB_EXE = os.path.join(BDGB_ROOT, "build", _BDGB_BIN)
 DATA_PATH = os.path.join(BDGB_ROOT, "data")
 
 # ---- MOCK: fallback when pytrends not installed ----

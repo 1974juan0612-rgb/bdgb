@@ -16,7 +16,16 @@ static int tests_pass = 0, tests_fail = 0;
 #define FAIL(msg) do { printf("FAIL: %s\n", msg); tests_fail++; } while(0)
 #define ASSERT(cond, msg) do { if (!(cond)) { FAIL(msg); return; } } while(0)
 
-static const char *TEST_PATH = "C:/Users/famil/Desktop/glifos/bdgb/tests/test_data";
+static char TEST_PATH[512] = "tests/test_data";
+
+static void resolve_test_path(void) {
+#ifdef BDGB_SOURCE_DIR
+    snprintf(TEST_PATH, sizeof(TEST_PATH), BDGB_SOURCE_DIR "/tests/test_data");
+#else
+    const char *root = getenv("BDGB_ROOT");
+    if (root) snprintf(TEST_PATH, sizeof(TEST_PATH), "%s/tests/test_data", root);
+#endif
+}
 
 static void cleanup(void) {
     const char *files[] = {"nodes.dat", "edges_geom.dat", "edges_dyn.dat",
@@ -292,7 +301,7 @@ static void test_crypt_file_roundtrip(void) {
     const char *enc  = "bdgb_crypt_test_enc.bdgb";
     const char *dec  = "bdgb_crypt_test_dec.txt";
 
-    FILE *f = fopen(orig, "w");
+    FILE *f = fopen(orig, "wb");
     ASSERT(f != NULL, "create orig file");
     fprintf(f, "BDGB CRYPT FILE TEST - masa madre encryptada!");
     fclose(f);
@@ -303,8 +312,8 @@ static void test_crypt_file_roundtrip(void) {
     r = bdgb_decrypt_file(enc, dec, "clave-secreta");
     ASSERT(r == 0, "decrypt should succeed");
 
-    FILE *fa = fopen(orig, "r");
-    FILE *fb = fopen(dec, "r");
+    FILE *fa = fopen(orig, "rb");
+    FILE *fb = fopen(dec, "rb");
     ASSERT(fa && fb, "both files exist");
     int eq = 1;
     int ca, cb;
@@ -347,6 +356,7 @@ static void run_all_tests(void) {
 }
 
 int main(void) {
+    resolve_test_path();
     cleanup();
     bdgb_init(TEST_PATH);
     run_all_tests();

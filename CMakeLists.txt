@@ -33,8 +33,9 @@ add_executable(bdgb_test
     src/agent.c
     crypt/bdgb_crypt.c
 )
+target_compile_definitions(bdgb_test PRIVATE BDGB_SOURCE_DIR="${CMAKE_SOURCE_DIR}")
 
-if(WIN32)
+if(UNIX)
     target_link_libraries(bdgb m)
     target_link_libraries(bdgb_test m)
 endif()
