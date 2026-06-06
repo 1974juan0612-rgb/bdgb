@@ -255,6 +255,18 @@ static int tool_system(const char *args, char *out, size_t outsz) {
     return run_captured(cmd, out, outsz);
 }
 
+/* Tool: learn-from-text — extract and learn new NLP terms from raw text */
+static int tool_learn_text(const char *args, char *out, size_t outsz) {
+    if (!args || args[0] == 0) {
+        snprintf(out, outsz, "{\"error\":\"no text provided\"}");
+        return -1;
+    }
+    int learned = nlp_learn_from_text(args, 50);
+    int total = nlp_term_count();
+    snprintf(out, outsz, "{\"learned\":%d,\"total_terms\":%d}", learned, total);
+    return 0;
+}
+
 typedef struct {
     const char *name;
     int (*handler)(const char *args, char *out, size_t outsz);
@@ -265,6 +277,7 @@ static ToolDef tools[] = {
     {"bdgb-search",     tool_bdgb_search},
     {"scraper-trends",  tool_scraper_trends},
     {"file-read",       tool_file_read},
+    {"learn-from-text", tool_learn_text},
     {"system",          tool_system},
     {NULL, NULL}
 };

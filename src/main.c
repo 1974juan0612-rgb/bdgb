@@ -168,6 +168,7 @@ static int cmd_interactive(void) {
     semantic_init(data_path);
     concept_graph_init(data_path);
     learning_init(data_path);
+    nlp_set_data_path(data_path);
     nlp_init();
 
     init_system();
@@ -212,6 +213,7 @@ int main(int argc, char *argv[]) {
     semantic_init(data_path);
     concept_graph_init(data_path);
     learning_init(data_path);
+    nlp_set_data_path(data_path);
     nlp_init();
 
     if (argc < 2) return cmd_interactive();
@@ -220,8 +222,14 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], "--export-nodes") == 0) return cmd_export_nodes();
     if (strcmp(argv[1], "--add-concept") == 0) return cmd_add_concept(argc, argv);
     if (strcmp(argv[1], "--agent-run") == 0) return cmd_agent_run(argc, argv);
-    if (strcmp(argv[1], "--init") == 0) { clear_data(); init_system(); init_semantics(); printf("{\"status\":\"ok\"}\n"); return 0; }
+    if (strcmp(argv[1], "--init") == 0) { clear_data(); init_system(); init_semantics(); nlp_init(); nlp_save(); printf("{\"status\":\"ok\"}\n"); return 0; }
     if (strcmp(argv[1], "--supervisor-tick") == 0) { agent_init(); agent_supervisor_tick(); return 0; }
+    if (strcmp(argv[1], "--learn") == 0 && argc >= 3) {
+        int n = nlp_learn_from_text(argv[2], 100);
+        printf("{\"learned\":%d,\"total\":%d}\n", n, nlp_term_count());
+        return 0;
+    }
+    if (strcmp(argv[1], "--show-terms") == 0) { nlp_list_terms(); return 0; }
 
     if (strcmp(argv[1], "--encrypt") == 0 && argc >= 4) {
         return bdgb_encrypt_file(argv[2], argv[3], argc > 4 ? argv[4] : "bdgb-default-key");
@@ -250,6 +258,8 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "  --add-concept <n> <c> <w> <r>\n");
     fprintf(stderr, "  --agent-run <id> ejecuta pipeline de agente\n");
     fprintf(stderr, "  --init         limpia e inicializa datos\n");
+    fprintf(stderr, "  --learn <text>  extrae y aprende nuevos terminos NLP\n");
+    fprintf(stderr, "  --show-terms    lista diccionario NLP completo\n");
     fprintf(stderr, "  --encrypt <in> <out> [key]  cifra archivo con BDGB-KAPREKAR\n");
     fprintf(stderr, "  --decrypt <in> <out> [key]  descifra archivo\n");
     fprintf(stderr, "  --hash <text>  genera hash BDGB de 16 bytes\n");
