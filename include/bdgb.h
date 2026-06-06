@@ -4,11 +4,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#define BDGB_GRID_BITS      4
-#define BDGB_GRID_SIZE      4
-#define BDGB_GRID_NODES     16
+#define BDGB_GRID_BITS      8
+#define BDGB_GRID_SIZE      16
+#define BDGB_GRID_NODES     256
 #define BDGB_MAX_NEIGHBORS  4
-#define BDGB_VERSION        1
+#define BDGB_VERSION        2
 
 typedef enum {
     NODE_OK = 0,

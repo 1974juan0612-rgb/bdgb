@@ -1,16 +1,13 @@
 import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 import json
-import struct
 import os
-import subprocess
-from datetime import datetime
+import sys
 
-DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
-AGENTS_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "agents")
-REGISTRY = os.path.join(AGENTS_PATH, "registry.json")
-
-NODE_FILE = os.path.join(DATA_PATH, "nodes.dat")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from bdgb_bridge import (search, export_nodes, agent_run,
+                         load_nodes_from_disk, decode_props, props_str,
+                         BDGB_ROOT, DATA_PATH, AGENTS_DIR)
 
 COLORS = {
     "bg": "#1a1a2e",
@@ -24,7 +21,16 @@ COLORS = {
     "blue": "#3498db",
 }
 
-GRID_SIZE = 4
+
+def _load_agents():
+    registry_path = os.path.join(BDGB_ROOT, "agents", "registry.json")
+    try:
+        with open(registry_path, "r") as f:
+            data = json.load(f)
+        return data.get("agentes", [])
+    except Exception:
+        return []
+
 
 class BDGBGui:
     def __init__(self, root):
@@ -34,53 +40,27 @@ class BDGBGui:
         self.root.configure(bg=COLORS["bg"])
 
         self.node_data = {}
-        self.agents = []
+        self.engine_nodes = []
+        self.agents = _load_agents()
         self.selected_node = None
 
         self.load_data()
         self.build_ui()
 
     def load_data(self):
-        self.node_data = {}
-        if os.path.exists(NODE_FILE):
-            with open(NODE_FILE, "rb") as f:
-                raw = f.read()
-                for i in range(0, len(raw), 4):
-                    if i + 4 <= len(raw):
-                        node_id = raw[i]
-                        x = raw[i + 1]
-                        y = raw[i + 2]
-                        flags = raw[i + 3]
-                        bits = f"{node_id:04b}"
-                        ones = bin(node_id).count("1")
-                        symmetric = bits == bits[::-1]
-                        geom = "CORNER" if (x in (0, 3) and y in (0, 3)) else ("EDGE" if (x in (0, 3) or y in (0, 3)) else "INTERIOR")
-                        self.node_data[node_id] = {
-                            "id": node_id, "x": x, "y": y, "bits": bits,
-                            "densidad": ones, "simetria": symmetric, "tipo_geom": geom,
-                            "radio": self._calc_radio(x, y)
-                        }
+        self.node_data = load_nodes_from_disk()
+        r = export_nodes()
+        self.engine_nodes = r.get("nodes", []) if isinstance(r, dict) else []
 
-        self.agents = []
-        if os.path.exists(REGISTRY):
-            with open(REGISTRY, "r") as f:
-                data = json.load(f)
-                self.agents = data.get("agentes", [])
-
-    def _calc_radio(self, x, y):
-        dx = 2 * x - 3
-        dy = 2 * y - 3
-        dist2 = dx * dx + dy * dy
-        if dist2 == 0: return 0
-        if dist2 <= 8: return 1
-        return 2
+    def merge_props(self, node_id):
+        for n in self.engine_nodes:
+            if n["id"] == node_id:
+                return decode_props(node_id, n)
+        return None
 
     def build_ui(self):
         main_frame = tk.Frame(self.root, bg=COLORS["bg"])
         main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-
-        self.root.columnconfigure(0, weight=1)
-        self.root.rowconfigure(0, weight=1)
 
         left = tk.Frame(main_frame, bg=COLORS["surface"], bd=1, relief=tk.RAISED)
         left.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(0, 5))
@@ -88,67 +68,94 @@ class BDGBGui:
         right = tk.Frame(main_frame, bg=COLORS["surface"], bd=1, relief=tk.RAISED)
         right.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 0))
 
+        self.header_var = tk.StringVar(value="CUADRÍCULA 16×16 (256 nodos)")
+        header = tk.Label(left, textvariable=self.header_var,
+                          font=("Consolas", 14, "bold"),
+                          bg=COLORS["surface"], fg=COLORS["accent"])
+        header.pack(pady=(10, 5))
+
         self.build_grid(left)
         self.build_info(right)
         self.build_agents(right)
         self.build_search(right)
 
     def build_grid(self, parent):
-        header = tk.Label(parent, text="CUADRÍCULA 4x4", font=("Consolas", 14, "bold"),
-                          bg=COLORS["surface"], fg=COLORS["accent"])
-        header.pack(pady=(10, 5))
+        canvas_frame = tk.Frame(parent, bg=COLORS["surface"])
+        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        grid_frame = tk.Frame(parent, bg=COLORS["surface"])
-        grid_frame.pack(pady=10)
+        self.grid_canvas = tk.Canvas(canvas_frame, bg=COLORS["bg"],
+                                     highlightthickness=0)
+        vbar = tk.Scrollbar(canvas_frame, orient=tk.VERTICAL, command=self.grid_canvas.yview)
+        hbar = tk.Scrollbar(canvas_frame, orient=tk.HORIZONTAL, command=self.grid_canvas.xview)
+        self.grid_canvas.configure(yscrollcommand=vbar.set, xscrollcommand=hbar.set)
 
-        for y in range(GRID_SIZE):
-            row_frame = tk.Frame(grid_frame, bg=COLORS["surface"])
+        vbar.pack(side=tk.RIGHT, fill=tk.Y)
+        hbar.pack(side=tk.BOTTOM, fill=tk.X)
+        self.grid_canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        self.grid_inner = tk.Frame(self.grid_canvas, bg=COLORS["bg"])
+        self.grid_canvas.create_window((0, 0), window=self.grid_inner, anchor="nw")
+
+        cells = []
+        for y in range(16):
+            row_frame = tk.Frame(self.grid_inner, bg=COLORS["bg"])
             row_frame.pack()
-            for x in range(GRID_SIZE):
-                node_id = (y << 2) | x
-                data = self.node_data.get(node_id, {})
-                self._draw_cell(row_frame, node_id, data, x, y)
+            for x in range(16):
+                node_id = (y << 4) | x
+                props = self.merge_props(node_id)
+                cell = self._make_cell(row_frame, node_id, props, x, y)
+                cells.append((node_id, cell))
+
+        self.grid_canvas.update_idletasks()
+        self.grid_canvas.config(scrollregion=self.grid_canvas.bbox("all"))
 
         legend = tk.Frame(parent, bg=COLORS["surface"])
-        legend.pack(pady=10)
+        legend.pack(pady=5)
         items = [
-            ("#2ecc71", "ATRACTOR"), ("#f39c12", "PRE-ATRACTOR"), ("#e94560", "SIMÉTRICO")
+            ("#2ecc71", "ATRACTOR"), ("#f39c12", "PRE-ATRACT"),
+            ("#e94560", "SIMÉTRICO"), ("#0f3460", "OTRO"),
         ]
         for color, label in items:
             f = tk.Frame(legend, bg=COLORS["surface"])
-            f.pack(side=tk.LEFT, padx=10)
+            f.pack(side=tk.LEFT, padx=5)
             tk.Canvas(f, width=12, height=12, bg=color, highlightthickness=0,
                       bd=0).pack(side=tk.LEFT)
             tk.Label(f, text=label, font=("Consolas", 9), bg=COLORS["surface"],
                      fg=COLORS["text"]).pack(side=tk.LEFT, padx=3)
 
-    def _draw_cell(self, parent, node_id, data, x, y):
-        is_sym = data.get("simetria", False)
-        densidad = data.get("densidad", 0)
+        self.legend = legend
 
-        if node_id in (0, 7, 9):
-            bg = "#2ecc71"
-        elif is_sym:
-            bg = "#e94560"
-        else:
-            bg = COLORS["primary"]
+    def _cell_color(self, props):
+        if not props:
+            return COLORS["primary"]
+        if props.get("clase_dinamica") == 0:
+            return "#2ecc71"
+        if props.get("simetria"):
+            return "#e94560"
+        if props.get("clase_dinamica") == 1:
+            return "#f39c12"
+        return COLORS["primary"]
 
-        cell = tk.Frame(parent, width=70, height=70, bg=bg, bd=1, relief=tk.RAISED,
-                        cursor="hand2")
-        cell.pack(side=tk.LEFT, padx=2, pady=2)
+    def _make_cell(self, parent, node_id, props, x, y):
+        bg = self._cell_color(props)
+        cell = tk.Frame(parent, width=48, height=48, bg=bg, bd=1,
+                        relief=tk.RAISED, cursor="hand2")
+        cell.pack(side=tk.LEFT, padx=1, pady=1)
         cell.pack_propagate(False)
 
         inner = tk.Frame(cell, bg=bg)
         inner.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
-        tk.Label(inner, text=f"#{node_id}", font=("Consolas", 10, "bold"),
+        tk.Label(inner, text=f"#{node_id}", font=("Consolas", 7, "bold"),
                 bg=bg, fg="white").pack()
-        tk.Label(inner, text=f"({x},{y})", font=("Consolas", 8),
-                bg=bg, fg="#ddd").pack()
-        tk.Label(inner, text=f"D:{densidad}", font=("Consolas", 7),
-                bg=bg, fg="#ccc").pack()
+        if props:
+            d = props.get("densidad", 0)
+            s = "S" if props.get("simetria") else ""
+            tk.Label(inner, text=f"D{d}{s}", font=("Consolas", 6),
+                    bg=bg, fg="#ddd").pack()
 
         cell.bind("<Button-1>", lambda e, nid=node_id: self.on_node_click(nid))
+        return cell
 
     def build_info(self, parent):
         self.info_frame = tk.Frame(parent, bg=COLORS["surface"])
@@ -188,7 +195,8 @@ class BDGBGui:
 
         for a in self.agents:
             self.agent_tree.insert("", tk.END,
-                values=(a.get("nombre", a["id"]), a.get("estado", "?"), a.get("metricas", {}).get("ejecuciones", 0)))
+                values=(a.get("nombre", a["id"]), a.get("estado", "?"),
+                        a.get("metricas", {}).get("ejecuciones", 0)))
 
         btn_frame = tk.Frame(frame, bg=COLORS["surface"])
         btn_frame.pack(fill=tk.X)
@@ -220,37 +228,31 @@ class BDGBGui:
                   command=self.do_search).pack()
 
         self.result_text = scrolledtext.ScrolledText(
-            frame, height=6, font=("Consolas", 10),
+            frame, height=8, font=("Consolas", 10),
             bg=COLORS["bg"], fg=COLORS["text"], insertbackground=COLORS["text"])
         self.result_text.pack(fill=tk.BOTH, pady=(5, 0))
 
+        tk.Label(frame, text="(búsqueda vía motor C nativo)",
+                font=("Consolas", 7), bg=COLORS["surface"],
+                fg=COLORS["text_dim"]).pack()
+
     def on_node_click(self, node_id):
         self.selected_node = node_id
-        data = self.node_data.get(node_id, {})
+        raw = self.node_data.get(node_id, {})
+        props = self.merge_props(node_id)
 
-        bits_str = "".join(str((node_id >> i) & 1) for i in range(3, -1, -1))
-
-        semantics_map = {}
-        sem_file = os.path.join(DATA_PATH, "semantics.dat")
-        if os.path.exists(sem_file):
-            with open(sem_file, "rb") as f:
-                raw = f.read()
-                for i in range(0, len(raw), 5):
-                    if i + 5 <= len(raw):
-                        nid = raw[i]
-                        cid = struct.unpack("<H", raw[i+1:i+3])[0]
-                        if nid == node_id:
-                            concepts = {1001: "belleza", 2002: "resistencia", 3003: "volumen", 4004: "simetria"}
-                            semantics_map[cid] = concepts.get(cid, f"concepto_{cid}")
-
+        bits = raw.get("bits", format(node_id, "08b"))
         text = f"▸ NODO #{node_id}\n"
-        text += f"  Bits: {bits_str}  |  Coord: ({data.get('x','?')},{data.get('y','?')})\n"
-        text += f"  Densidad: {data.get('densidad', '?')}  |  Radio: {data.get('radio', '?')}\n"
-        text += f"  Simetría: {'SI' if data.get('simetria') else 'NO'}\n"
-        text += f"  Tipo geom: {data.get('tipo_geom', '?')}\n"
-        text += f"  Atractor: {'0' if node_id == 0 else ('7' if node_id == 7 else ('9' if node_id == 9 else '?'))}\n"
-        if semantics_map:
-            text += f"  Conceptos: {', '.join(f'{k}({v})' for k, v in semantics_map.items())}\n"
+        text += f"  Bits: {bits}  |  Coord: ({raw.get('x','?')},{raw.get('y','?')})\n"
+
+        if props:
+            text += f"  Densidad: {props.get('densidad',0)}  |  Radio: {props.get('radio',0)}\n"
+            text += f"  Simetría: {'SI' if props.get('simetria') else 'NO'}\n"
+            geom_names = {0: "CORNER", 1: "EDGE", 2: "INTERIOR"}
+            dyn_names = {0: "ATRACTOR", 1: "PRE-ATRACTOR", 2: "TRANSIENTE"}
+            text += f"  Tipo geom: {geom_names.get(props.get('tipo_geom',0),'?')}\n"
+            text += f"  Clase din: {dyn_names.get(props.get('clase_dinamica',0),'?')}\n"
+            text += f"  Atractor: #{props.get('atractor_id','?')} ({props.get('pasos_atractor','?')} steps)\n"
 
         self.info_text.config(state=tk.NORMAL)
         self.info_text.delete(1.0, tk.END)
@@ -262,70 +264,33 @@ class BDGBGui:
         if not query:
             return
 
-        concept_map = {"belleza": 1001, "resistencia": 2002, "volumen": 3003, "simetria": 4004}
-        dyn_map = {"estable": [0, 7, 9], "atractor0": [0], "atractor7": [7], "atractor9": [9],
-                   "cerca0": [0], "cerca7": [7], "cerca9": [9]}
-        prop_map = {"simetrico": "simetria", "simetrica": "simetria", "denso": "densidad",
-                    "densa": "densidad", "interior": "interior", "esquina": "esquina",
-                    "borde": "borde", "estable": "estable"}
+        r = search(query)
+        if isinstance(r, dict) and "results" in r:
+            results = r["results"]
+        else:
+            err = r.get("error", "unknown") if isinstance(r, dict) else "invalid response"
+            self.result_text.config(state=tk.NORMAL)
+            self.result_text.delete(1.0, tk.END)
+            self.result_text.insert(tk.END, f"Error del motor C: {err}\n")
+            self.result_text.config(state=tk.DISABLED)
+            return
 
-        tokens = query.lower().split()
-        concept = 0
-        dyn_filter = -1
-        prop_filter = None
-
-        for t in tokens:
-            if t in concept_map: concept = concept_map[t]
-            if t in dyn_map: dyn_filter = dyn_map[t][0]
-            if t in prop_map: prop_filter = prop_map[t]
-
-        results = []
-        for nid, data in self.node_data.items():
-            score = 100
-            hit = True
-
-            if concept:
-                sem_file = os.path.join(DATA_PATH, "semantics.dat")
-                found = False
-                if os.path.exists(sem_file):
-                    with open(sem_file, "rb") as f:
-                        raw = f.read()
-                        for i in range(0, len(raw), 5):
-                            if i + 5 <= len(raw) and raw[i] == nid:
-                                cid = struct.unpack("<H", raw[i+1:i+3])[0]
-                                if cid == concept: found = True
-                if not found: hit = False
-
-            if dyn_filter >= 0 and nid not in [0, 7, 9]:
-                hit = False
-            if dyn_filter >= 0 and nid == dyn_filter:
-                score += 150
-            elif nid in (0, 7, 9):
-                score += 150
-
-            if prop_filter == "simetria" and not data.get("simetria"): hit = False
-            if prop_filter == "simetria" and data.get("simetria"): score += 100
-            if prop_filter == "densidad" and data.get("densidad", 0) < 3: hit = False
-            if prop_filter == "densidad" and data.get("densidad", 0) >= 3: score += 80
-            if prop_filter == "interior" and data.get("tipo_geom") != "INTERIOR": hit = False
-            if prop_filter == "esquina" and data.get("tipo_geom") != "CORNER": hit = False
-            if prop_filter == "borde" and data.get("tipo_geom") != "EDGE": hit = False
-
-            if hit:
-                results.append((nid, score))
-
-        results.sort(key=lambda r: -r[1])
+        out = f"Consulta: '{query}'  →  {len(results)} resultados (motor C)\n\n"
+        for res in results:
+            nid = res.get("node_id", 0)
+            score = res.get("score", 0)
+            d = res.get("densidad", 0)
+            s = "S" if res.get("simetria") else "N"
+            geom_names = {0: "CRN", 1: "EDG", 2: "INT"}
+            g = geom_names.get(res.get("tipo_geom"), "?")
+            a = res.get("atractor_id", 0)
+            bits = format(nid, "08b")
+            out += f"  #{nid:3d} {bits}  score={score:3d}  "
+            out += f"D{d} {s} {g} A{a}\n"
 
         self.result_text.config(state=tk.NORMAL)
         self.result_text.delete(1.0, tk.END)
-        self.result_text.insert(tk.END, f"Consulta: '{query}'  →  {len(results)} resultados\n\n")
-        for nid, score in results:
-            data = self.node_data.get(nid, {})
-            bits = "".join(str((nid >> i) & 1) for i in range(3, -1, -1))
-            self.result_text.insert(tk.END,
-                f"  #{nid}  {bits}  score={score:3d}  "
-                f"sim={'S' if data.get('simetria') else 'N'}  "
-                f"dens={data.get('densidad',0)}  {data.get('tipo_geom','?')}\n")
+        self.result_text.insert(tk.END, out)
         self.result_text.config(state=tk.DISABLED)
 
     def run_selected_agent(self):
@@ -335,32 +300,30 @@ class BDGBGui:
             return
         item = self.agent_tree.item(sel[0])
         agent_name = item["values"][0]
-
         agent_id = None
         for a in self.agents:
             if a.get("nombre", a["id"]) == agent_name:
                 agent_id = a["id"]
                 break
+        if not agent_id:
+            return
 
-        if agent_id:
-            config_path = os.path.join(AGENTS_PATH, agent_id, "config.json")
-            if os.path.exists(config_path):
-                with open(config_path, "r") as f:
-                    cfg = json.load(f)
-                pipeline = cfg.get("pipeline", {})
-                steps = list(pipeline.keys())
-                text = f"▶ Ejecutando: {agent_name}\n"
-                for i, step in enumerate(steps):
-                    text += f"   {i+1}. {step}\n"
-                text += "\n[Simulado] Pipeline completado."
-                self.result_text.config(state=tk.NORMAL)
-                self.result_text.delete(1.0, tk.END)
-                self.result_text.insert(tk.END, text)
-                self.result_text.config(state=tk.DISABLED)
-            else:
-                messagebox.showerror("BDGB", f"Config no encontrado para {agent_id}")
+        self.result_text.config(state=tk.NORMAL)
+        self.result_text.delete(1.0, tk.END)
+        self.result_text.insert(tk.END, f"▶ Ejecutando agente '{agent_id}' vía motor C...\n\n")
+        self.result_text.config(state=tk.DISABLED)
+        self.root.update()
+
+        r = agent_run(agent_id)
+        self.result_text.config(state=tk.NORMAL)
+        if isinstance(r, dict) and "error" in r:
+            self.result_text.insert(tk.END, f"  Error: {r['error']}\n")
+        else:
+            self.result_text.insert(tk.END, "  Agente ejecutado (ver consola para detalles)\n")
+        self.result_text.config(state=tk.DISABLED)
 
     def reload_agents(self):
+        self.agents = _load_agents()
         self.load_data()
         for item in self.agent_tree.get_children():
             self.agent_tree.delete(item)
@@ -368,6 +331,8 @@ class BDGBGui:
             self.agent_tree.insert("", tk.END,
                 values=(a.get("nombre", a["id"]), a.get("estado", "?"),
                         a.get("metricas", {}).get("ejecuciones", 0)))
+        self.header_var.set(f"CUADRÍCULA 16×16 ({len(self.node_data)} nodos)")
+
 
 if __name__ == "__main__":
     root = tk.Tk()

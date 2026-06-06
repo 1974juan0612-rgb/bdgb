@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static char learn_path[256] = {0};
+static char learn_path[512] = {0};
 static int  learn_initialized = 0;
 
 static uint32_t node_usage[BDGB_GRID_NODES];
@@ -34,7 +34,7 @@ int learning_init(const char *data_path) {
 
 void reinforce_node(uint8_t node_id) {
     if (!learn_initialized) return;
-    if (node_id >= BDGB_GRID_NODES) return;
+    if ((uint16_t)node_id >= BDGB_GRID_NODES) return;
     if (node_usage[node_id] < 0xFFFFFFF0)
         node_usage[node_id] += REINFORCE_AMOUNT;
 }
@@ -67,7 +67,7 @@ void reinforce_edge(uint16_t from, uint16_t to) {
 }
 
 uint32_t get_node_usage(uint8_t node_id) {
-    if (!learn_initialized || node_id >= BDGB_GRID_NODES) return 0;
+    if (!learn_initialized || (uint16_t)node_id >= BDGB_GRID_NODES) return 0;
     return node_usage[node_id];
 }
 

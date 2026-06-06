@@ -19,6 +19,20 @@ add_executable(bdgb
     src/agent.c
 )
 
+add_executable(bdgb_test
+    tests/test_bdgb.c
+    src/node.c
+    src/grid.c
+    src/storage.c
+    src/semantics.c
+    src/concept_graph.c
+    src/search.c
+    src/learning.c
+    src/nlp.c
+    src/agent.c
+)
+
 if(WIN32)
     target_link_libraries(bdgb m)
+    target_link_libraries(bdgb_test m)
 endif()

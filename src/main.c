@@ -4,10 +4,28 @@
 #include "search.h"
 #include "learning.h"
 #include "nlp.h"
+#include "agent.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-static const char *DATA_PATH = "C:/Users/famil/Desktop/glifos/bdgb/data";
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+static char data_path[512] = {0};
+
+static void resolve_data_path(void) {
+    const char *env = getenv("BDGB_DATA");
+    if (env) {
+        strncpy(data_path, env, sizeof(data_path) - 1);
+        return;
+    }
+    const char *root = getenv("BDGB_ROOT");
+    if (!root) root = ".";
+    snprintf(data_path, sizeof(data_path), "%s/data", root);
+}
 
 static void clear_data(void) {
     char path[512];
@@ -17,14 +35,14 @@ static void clear_data(void) {
                            "usage_nodes.dat", "usage_concepts.dat",
                            "usage_edges.dat", NULL};
     for (int i = 0; files[i]; i++) {
-        snprintf(path, sizeof(path), "%s/%s", DATA_PATH, files[i]);
+        snprintf(path, sizeof(path), "%s/%s", data_path, files[i]);
         remove(path);
     }
 }
 
 static void init_system(void) {
-    for (uint8_t id = 0; id < BDGB_GRID_NODES; id++) {
-        bdgb_node_t node = bdgb_create_node(id);
+    for (uint16_t id = 0; id < BDGB_GRID_NODES; id++) {
+        bdgb_node_t node = bdgb_create_node((uint8_t)id);
         bdgb_store_node(&node);
     }
 }
@@ -74,12 +92,85 @@ static void run_query(const char *label, const char *query) {
     printf("\n");
 }
 
-int main(void) {
+/* --- CLI commands for Python bridge / agent execution --- */
+
+static int cmd_search(int argc, char *argv[]) {
+    const char *query = argv[2];
+    SearchResult results[MAX_RESULTS];
+    int n = nlp_search(query, results, MAX_RESULTS);
+    reinforce_results(results, n);
+    qsort(results, n, sizeof(SearchResult), cmp_score);
+
+    printf("{\"query\":\"%s\",\"count\":%d,\"results\":[", query, n);
+    for (int i = 0; i < n; i++) {
+        bdgb_props_t p = bdgb_compute_props(results[i].node_id);
+        if (i > 0) printf(",");
+        printf("{\"node_id\":%u,\"score\":%u,\"concept_id\":%u,"
+               "\"densidad\":%u,\"simetria\":%u,\"tipo_geom\":%u,"
+               "\"clase_dinamica\":%u,\"pasos_atractor\":%d,\"atractor_id\":%u}",
+               results[i].node_id, results[i].score, results[i].concept_id,
+               p.densidad, p.simetria, p.tipo_geom,
+               p.clase_dinamica, p.pasos_atractor, p.atractor_id);
+    }
+    printf("]}\n");
+    save_usage();
+    return 0;
+}
+
+static int cmd_export_nodes(void) {
+    printf("{\"nodes\":[");
+    for (uint16_t id = 0; id < BDGB_GRID_NODES; id++) {
+        bdgb_node_t node;
+        if (bdgb_load_node((uint8_t)id, &node) != NODE_OK) continue;
+        bdgb_props_t p = bdgb_compute_props((uint8_t)id);
+        if (id > 0) printf(",");
+        printf("{\"id\":%u,\"x\":%u,\"y\":%u,"
+               "\"bits\":%u,\"densidad\":%u,\"simetria\":%u,"
+               "\"tipo_geom\":%u,\"radio\":%u,"
+               "\"clase_dinamica\":%u,\"pasos_atractor\":%d,\"atractor_id\":%u}",
+               id, node.x, node.y, node.id_bits,
+               p.densidad, p.simetria, p.tipo_geom, p.radio,
+               p.clase_dinamica, p.pasos_atractor, p.atractor_id);
+    }
+    printf("]}\n");
+    return 0;
+}
+
+static int cmd_add_concept(int argc, char *argv[]) {
+    if (argc < 6) {
+        fprintf(stderr, "Uso: --add-concept <node_id> <concept_id> <weight> <rel_type>\n");
+        return 1;
+    }
+    uint8_t node_id = (uint8_t)atoi(argv[2]);
+    uint16_t concept_id = (uint16_t)atoi(argv[3]);
+    uint8_t weight = (uint8_t)atoi(argv[4]);
+    uint8_t rel_type = (uint8_t)atoi(argv[5]);
+    int r = add_concept(node_id, concept_id, weight, rel_type);
+    printf("{\"status\":\"%s\"}\n", r == 0 ? "ok" : "error");
+    return 0;
+}
+
+static int cmd_agent_run(int argc, char *argv[]) {
+    if (argc < 3) {
+        fprintf(stderr, "Uso: --agent-run <agent_id>\n");
+        return 1;
+    }
+    agent_init();
+    return agent_run(argv[2]);
+}
+
+static int cmd_interactive(void) {
+    printf("=== BDGB v%d ===\n", BDGB_VERSION);
+    printf("Data path: %s\n", data_path);
+    printf("Grid: %d bits, %d x %d (%d nodes)\n",
+           BDGB_GRID_BITS, BDGB_GRID_SIZE, BDGB_GRID_SIZE, BDGB_GRID_NODES);
+    printf("\n");
+
     clear_data();
-    bdgb_init(DATA_PATH);
-    semantic_init(DATA_PATH);
-    concept_graph_init(DATA_PATH);
-    learning_init(DATA_PATH);
+    bdgb_init(data_path);
+    semantic_init(data_path);
+    concept_graph_init(data_path);
+    learning_init(data_path);
     nlp_init();
 
     init_system();
@@ -108,4 +199,39 @@ int main(void) {
 
     printf("=== BDGB con lenguaje natural lista ===\n");
     return 0;
+}
+
+int main(int argc, char *argv[]) {
+    srand((unsigned)time(NULL));
+
+    resolve_data_path();
+    if (argc > 2 && strcmp(argv[1], "--data-path") == 0) {
+        strncpy(data_path, argv[2], sizeof(data_path) - 1);
+        argv += 2;
+        argc -= 2;
+    }
+
+    bdgb_init(data_path);
+    semantic_init(data_path);
+    concept_graph_init(data_path);
+    learning_init(data_path);
+    nlp_init();
+
+    if (argc < 2) return cmd_interactive();
+
+    if (strcmp(argv[1], "--search") == 0 && argc >= 3) return cmd_search(argc, argv);
+    if (strcmp(argv[1], "--export-nodes") == 0) return cmd_export_nodes();
+    if (strcmp(argv[1], "--add-concept") == 0) return cmd_add_concept(argc, argv);
+    if (strcmp(argv[1], "--agent-run") == 0) return cmd_agent_run(argc, argv);
+    if (strcmp(argv[1], "--init") == 0) { clear_data(); init_system(); init_semantics(); printf("{\"status\":\"ok\"}\n"); return 0; }
+    if (strcmp(argv[1], "--supervisor-tick") == 0) { agent_init(); agent_supervisor_tick(); return 0; }
+
+    fprintf(stderr, "Uso: bdgb [--data-path <path>] <comando>\n");
+    fprintf(stderr, "  (sin args)    modo interactivo\n");
+    fprintf(stderr, "  --search <q>  busqueda NLP, salida JSON\n");
+    fprintf(stderr, "  --export-nodes  dump JSON de todos los nodos\n");
+    fprintf(stderr, "  --add-concept <n> <c> <w> <r>\n");
+    fprintf(stderr, "  --agent-run <id>  ejecuta pipeline de agente\n");
+    fprintf(stderr, "  --init         limpia e inicializa datos\n");
+    return 1;
 }

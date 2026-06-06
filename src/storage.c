@@ -7,7 +7,7 @@
 #define EDGE_DYN_FILE "edges_dyn.dat"
 #define INDEX_FILE "index_id.dat"
 
-static char data_path[256] = {0};
+static char data_path[512] = {0};
 static int initialized = 0;
 
 static void make_path(char *buf, size_t bufsz, const char *filename) {
@@ -48,7 +48,7 @@ bdgb_error_t bdgb_store_node(const bdgb_node_t *node) {
 
 bdgb_error_t bdgb_load_node(uint8_t id, bdgb_node_t *out_node) {
     if (!initialized) return NODE_ERR_INVALID;
-    if (id >= BDGB_GRID_NODES) return NODE_ERR_NOT_FOUND;
+    if ((uint16_t)id >= BDGB_GRID_NODES) return NODE_ERR_NOT_FOUND;
 
     FILE *f = open_file(NODE_FILE, "rb");
     if (!f) return NODE_ERR_NOT_FOUND;
@@ -69,7 +69,7 @@ bdgb_error_t bdgb_load_all_nodes(bdgb_node_t *out_nodes, int *out_count) {
         return NODE_OK;
     }
 
-    *out_count = fread(out_nodes, sizeof(bdgb_node_t), BDGB_GRID_NODES, f);
+    *out_count = (int)fread(out_nodes, sizeof(bdgb_node_t), BDGB_GRID_NODES, f);
     fclose(f);
     return NODE_OK;
 }

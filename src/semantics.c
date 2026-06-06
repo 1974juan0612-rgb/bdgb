@@ -3,8 +3,14 @@
 #include <stdio.h>
 #include <string.h>
 
-static char sem_path[256] = {0};
+static char sem_path[512] = {0};
 static int  sem_initialized = 0;
+
+static SemHashBucket sem_hash[HASH_BUCKETS];
+
+static uint8_t hash_u16(uint16_t key) {
+    return (uint8_t)((key ^ (key >> 4)) & 0xFF);
+}
 
 static void make_sem_path(char *buf, size_t bufsz, const char *filename) {
     snprintf(buf, bufsz, "%s/%s", sem_path, filename);
@@ -13,6 +19,7 @@ static void make_sem_path(char *buf, size_t bufsz, const char *filename) {
 int semantic_init(const char *data_path) {
     strncpy(sem_path, data_path, sizeof(sem_path) - 1);
     sem_initialized = 1;
+    rebuild_sem_hash();
     return 0;
 }
 
@@ -23,6 +30,32 @@ static int sem_file_exists(const char *filename) {
     if (!f) return 0;
     fclose(f);
     return 1;
+}
+
+int rebuild_sem_hash(void) {
+    memset(sem_hash, 0, sizeof(sem_hash));
+    if (!sem_file_exists(SEMANTICS_FILE)) return 0;
+
+    char path[512];
+    make_sem_path(path, sizeof(path), SEMANTICS_FILE);
+    FILE *f = fopen(path, "rb");
+    if (!f) return -1;
+
+    SemanticLink link;
+    while (fread(&link, sizeof(SemanticLink), 1, f) == 1) {
+        uint8_t h = hash_u16(link.concept_id);
+        SemHashBucket *bucket = &sem_hash[h];
+        if (bucket->count < HASH_CHAIN_MAX) {
+            SemHashEntry *e = &bucket->entries[bucket->count++];
+            e->concept_id = link.concept_id;
+            e->node_id = link.node_id;
+            e->weight = link.weight;
+            e->rel_type = link.rel_type;
+        }
+    }
+
+    fclose(f);
+    return 0;
 }
 
 int add_concept(uint8_t node_id, uint16_t concept_id,
@@ -43,52 +76,62 @@ int add_concept(uint8_t node_id, uint16_t concept_id,
     size_t written = fwrite(&link, sizeof(SemanticLink), 1, f);
     fclose(f);
 
-    return (written == 1) ? 0 : -1;
+    if (written != 1) return -1;
+
+    uint8_t h = hash_u16(concept_id);
+    SemHashBucket *bucket = &sem_hash[h];
+    if (bucket->count < HASH_CHAIN_MAX) {
+        SemHashEntry *e = &bucket->entries[bucket->count++];
+        e->concept_id = concept_id;
+        e->node_id = node_id;
+        e->weight = weight;
+        e->rel_type = rel_type;
+    }
+
+    return 0;
 }
 
 int find_nodes_by_concept(uint16_t concept_id,
                           SemanticLink *out, int max_out) {
     if (!sem_initialized) return -1;
-    if (!sem_file_exists(SEMANTICS_FILE)) return 0;
 
-    char path[512];
-    make_sem_path(path, sizeof(path), SEMANTICS_FILE);
-    FILE *f = fopen(path, "rb");
-    if (!f) return -1;
-
-    SemanticLink link;
+    uint8_t h = hash_u16(concept_id);
+    SemHashBucket *bucket = &sem_hash[h];
     int count = 0;
 
-    while (fread(&link, sizeof(SemanticLink), 1, f) == 1 && count < max_out) {
-        if (link.concept_id == concept_id) {
-            out[count++] = link;
+    for (int i = 0; i < bucket->count && count < max_out; i++) {
+        SemHashEntry *e = &bucket->entries[i];
+        if (e->concept_id == concept_id) {
+            out[count].node_id = e->node_id;
+            out[count].concept_id = e->concept_id;
+            out[count].weight = e->weight;
+            out[count].rel_type = e->rel_type;
+            count++;
         }
     }
 
-    fclose(f);
     return count;
 }
 
 int find_concepts_by_node(uint8_t node_id,
                           SemanticLink *out, int max_out) {
     if (!sem_initialized) return -1;
-    if (!sem_file_exists(SEMANTICS_FILE)) return 0;
 
-    char path[512];
-    make_sem_path(path, sizeof(path), SEMANTICS_FILE);
-    FILE *f = fopen(path, "rb");
-    if (!f) return -1;
-
-    SemanticLink link;
     int count = 0;
-
-    while (fread(&link, sizeof(SemanticLink), 1, f) == 1 && count < max_out) {
-        if (link.node_id == node_id) {
-            out[count++] = link;
+    for (int b = 0; b < HASH_BUCKETS && count < max_out; b++) {
+        SemHashBucket *bucket = &sem_hash[b];
+        for (int i = 0; i < bucket->count && count < max_out; i++) {
+            SemHashEntry *e = &bucket->entries[i];
+            if (e->node_id == node_id) {
+                out[count].node_id = e->node_id;
+                out[count].concept_id = e->concept_id;
+                out[count].weight = e->weight;
+                out[count].rel_type = e->rel_type;
+                count++;
+            }
         }
     }
 
-    fclose(f);
     return count;
 }
 

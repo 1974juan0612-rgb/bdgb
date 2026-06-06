@@ -48,12 +48,12 @@ uint16_t compute_rank(uint8_t node_id, uint16_t concept_id, uint8_t semantic_wei
 
 int search_by_props(PropPredicate pred, SearchResult *out, int max_out) {
     int count = 0;
-    for (uint8_t id = 0; id < BDGB_GRID_NODES && count < max_out; id++) {
-        bdgb_props_t p = bdgb_compute_props(id);
+    for (int id = 0; id < BDGB_GRID_NODES && count < max_out; id++) {
+        bdgb_props_t p = bdgb_compute_props((uint8_t)id);
         if (pred(&p)) {
-            out[count].node_id = id;
+            out[count].node_id = (uint8_t)id;
             out[count].concept_id = 0;
-            out[count].score = compute_rank(id, 0, 200);
+            out[count].score = compute_rank((uint8_t)id, 0, 200);
             out[count].path_len = 0;
             count++;
         }
@@ -151,12 +151,12 @@ int search_semantic_deep(uint16_t concept_id, int depth,
 int search_near_attractor(uint8_t attractor_id, PropPredicate pred,
                           SearchResult *out, int max_out) {
     int count = 0;
-    for (uint8_t id = 0; id < BDGB_GRID_NODES && count < max_out; id++) {
-        bdgb_props_t p = bdgb_compute_props(id);
+    for (int id = 0; id < BDGB_GRID_NODES && count < max_out; id++) {
+        bdgb_props_t p = bdgb_compute_props((uint8_t)id);
         if (p.atractor_id == attractor_id && (!pred || pred(&p))) {
-            out[count].node_id = id;
+            out[count].node_id = (uint8_t)id;
             out[count].concept_id = 0;
-            out[count].score = compute_rank(id, 0, 200);
+            out[count].score = compute_rank((uint8_t)id, 0, 200);
             out[count].path_len = 0;
             count++;
         }
@@ -167,12 +167,12 @@ int search_near_attractor(uint8_t attractor_id, PropPredicate pred,
 int search_by_geom_type(uint8_t geom_type, PropPredicate pred,
                         SearchResult *out, int max_out) {
     int count = 0;
-    for (uint8_t id = 0; id < BDGB_GRID_NODES && count < max_out; id++) {
-        bdgb_props_t p = bdgb_compute_props(id);
+    for (int id = 0; id < BDGB_GRID_NODES && count < max_out; id++) {
+        bdgb_props_t p = bdgb_compute_props((uint8_t)id);
         if (p.tipo_geom == geom_type && (!pred || pred(&p))) {
-            out[count].node_id = id;
+            out[count].node_id = (uint8_t)id;
             out[count].concept_id = 0;
-            out[count].score = compute_rank(id, 0, 200);
+            out[count].score = compute_rank((uint8_t)id, 0, 200);
             out[count].path_len = 0;
             count++;
         }
