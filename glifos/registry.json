@@ -1,41 +1,61 @@
 {
-  "version": "2.0",
-  "_desc": "Registro maestro de todos los agentes/automatizaciones.",
-  "agentes": [
+  "version": "3.0",
+  "_desc": "Registro maestro de sistemas y glifos.",
+  "nota": "Primero se define el sistema (flujo de trabajo), luego se crean los glifos que lo componen.",
+  "sistemas": [
     {
-      "id": "trend-tracker",
-      "nombre": "Trend Tracker Diario",
-      "descripcion": "Monitorea Google Trends a diario, genera reporte y cada 7 dias un resumen semanal.",
+      "sistema": "vigilancia-tendencias",
+      "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
+      "estado": "activo",
+      "glifos": ["primo", "trend-tracker"]
+    }
+  ],
+  "glifos": [
+    {
+      "id": "primo",
+      "nombre": "Glifo Primo - Trend Tracker",
+      "tipo": "nativo",
+      "descripcion": "Compilado en el binario BDGB. Fetch de tendencias, reporte diario, inyeccion en BDGB.",
       "estado": "activo",
       "creado": "2026-06-08",
-      "ultima_ejecucion": null,
+      "sistema": "vigilancia-tendencias",
       "schedule": {
         "tipo": "diario",
         "hora": "08:00"
       },
-      "pipeline": [
-        "fetch-trends",
-        "generate-daily-report",
-        "check-weekly-summary"
-      ],
-      "herramientas": [
-        "python3",
-        "pytrends",
-        "bdgb-bridge"
-      ],
       "metricas": {
         "ejecuciones": 0,
-        "ultimo_report": null,
-        "dias_consecutivos": 0
+        "exitosas": 0,
+        "fallidas": 0
+      }
+    },
+    {
+      "id": "trend-tracker",
+      "nombre": "Trend Tracker Diario (externo)",
+      "tipo": "externo",
+      "descripcion": "Script Python. Google Trends + pytrends, reporte JSON/PDF, resumen semanal.",
+      "estado": "activo",
+      "creado": "2026-06-08",
+      "sistema": "vigilancia-tendencias",
+      "schedule": {
+        "tipo": "diario",
+        "hora": "08:05"
+      },
+      "dependencias": ["primo"],
+      "ruta": "trend-tracker/trend_tracker.py",
+      "metricas": {
+        "ejecuciones": 0,
+        "ultimo_report": null
       }
     },
     {
       "id": "youtube-automator",
       "nombre": "Automator de YouTube",
+      "tipo": "externo",
       "descripcion": "Busca tendencias, genera guion con IA, crea video y lo publica.",
-      "estado": "activo",
+      "estado": "inactivo",
       "creado": "2026-06-05",
-      "ultima_ejecucion": null,
+      "sistema": null,
       "schedule": {
         "tipo": "semanal",
         "dia": "lunes",
@@ -47,13 +67,6 @@
         "notebooklm_genera_guion",
         "godot_genera_video",
         "youtube_subir"
-      ],
-      "herramientas": [
-        "python3",
-        "notebooklm",
-        "godot",
-        "ffmpeg",
-        "youtube-upload"
       ],
       "metricas": {
         "ejecuciones": 0,

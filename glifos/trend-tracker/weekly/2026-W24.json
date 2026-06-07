@@ -1,0 +1,103 @@
+{
+  "week": 24,
+  "year": 2026,
+  "generated": "2026-06-08T00:23:45.589735",
+  "days_covered": 7,
+  "date_range": {
+    "from": "2026-06-02",
+    "to": "2026-06-08"
+  },
+  "top_trends": [
+    {
+      "topic": "ia generativa arte",
+      "avg_score": 91,
+      "appearances": 6,
+      "category": "tecnologia"
+    },
+    {
+      "topic": "inteligencia artificial pixel art",
+      "avg_score": 88,
+      "appearances": 6,
+      "category": "tecnologia"
+    },
+    {
+      "topic": "diseno de personajes pixel",
+      "avg_score": 82,
+      "appearances": 6,
+      "category": "arte"
+    },
+    {
+      "topic": "video juegos retro 2026",
+      "avg_score": 79,
+      "appearances": 6,
+      "category": "entretenimiento"
+    },
+    {
+      "topic": "game development sin codigo",
+      "avg_score": 76,
+      "appearances": 6,
+      "category": "tecnologia"
+    },
+    {
+      "topic": "ia",
+      "avg_score": 76,
+      "appearances": 1,
+      "category": "general"
+    },
+    {
+      "topic": "musica lo fi para estudiar",
+      "avg_score": 73,
+      "appearances": 6,
+      "category": "musica"
+    },
+    {
+      "topic": "animacion 2d principiantes",
+      "avg_score": 71,
+      "appearances": 6,
+      "category": "educacion"
+    },
+    {
+      "topic": "tutorial blender 3d",
+      "avg_score": 67,
+      "appearances": 6,
+      "category": "educacion"
+    },
+    {
+      "topic": "chip tunes musica",
+      "avg_score": 64,
+      "appearances": 6,
+      "category": "musica"
+    },
+    {
+      "topic": "cocina vegana rapida",
+      "avg_score": 61,
+      "appearances": 6,
+      "category": "cocina"
+    },
+    {
+      "topic": "musica",
+      "avg_score": 55,
+      "appearances": 1,
+      "category": "general"
+    },
+    {
+      "topic": "inteligencia artificial",
+      "avg_score": 3,
+      "appearances": 1,
+      "category": "general"
+    },
+    {
+      "topic": "pixel art",
+      "avg_score": 3,
+      "appearances": 1,
+      "category": "general"
+    },
+    {
+      "topic": "video juegos",
+      "avg_score": 0,
+      "appearances": 1,
+      "category": "general"
+    }
+  ],
+  "total_unique_topics": 15
+}

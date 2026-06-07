@@ -1,0 +1,33 @@
+{
+  "date": "2026-06-08",
+  "timestamp": "2026-06-08T00:23:44.728140",
+  "source": "mock",
+  "trend_count": 5,
+  "trends": [
+    {
+      "topic": "inteligencia artificial",
+      "score": 3,
+      "category": "general"
+    },
+    {
+      "topic": "pixel art",
+      "score": 3,
+      "category": "general"
+    },
+    {
+      "topic": "video juegos",
+      "score": 0,
+      "category": "general"
+    },
+    {
+      "topic": "musica",
+      "score": 55,
+      "category": "general"
+    },
+    {
+      "topic": "ia",
+      "score": 76,
+      "category": "general"
+    }
+  ]
+}
