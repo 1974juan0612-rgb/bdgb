@@ -17,8 +17,8 @@ static int initialized = 0;
 int agent_init(void) {
     const char *root = getenv("BDGB_ROOT");
     if (!root) root = ".";
-    snprintf(registry_path, sizeof(registry_path), "%s/agents/registry.json", root);
-    snprintf(agents_dir, sizeof(agents_dir), "%s/agents", root);
+    snprintf(registry_path, sizeof(registry_path), "%s/glifos/registry.json", root);
+    snprintf(agents_dir, sizeof(agents_dir), "%s/glifos", root);
     agent_count = 0;
     memset(agents, 0, sizeof(agents));
     initialized = 1;

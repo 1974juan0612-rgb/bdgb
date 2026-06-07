@@ -5,7 +5,7 @@
   "pipeline": {
     "fetch-trends": {
       "tool": "system",
-      "args": "python3 agents/trend-tracker/trend_tracker.py --daily",
+      "args": "python3 glifos/trend-tracker/trend_tracker.py --daily",
       "desc": "Obtener Google Trends y guardar reporte diario"
     },
     "generate-daily-report": {

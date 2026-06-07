@@ -4,8 +4,9 @@ trend_tracker.py — Agente Trend Tracker para BDGB.
 Carpeta separada de la masa madre: agents/trend-tracker/
 
 Tareas:
-  --daily    : Obtiene Google Trends, guarda reporte diario en daily/
-  --weekly   : Agrega los ultimos 7 reportes en weekly/YYYY-WW.json
+  --daily    : Obtiene Google Trends, guarda reporte diario en daily/ (JSON + PDF)
+  --weekly   : Agrega los ultimos 7 reportes en weekly/YYYY-WW.json + PDF
+  --export-pdf : Convierte TODOS los JSONs de daily/ y weekly/ a PDF
   --status   : Muestra estado actual del agente
   --inject   : Inyecta tendencias en BDGB via bdgb --add-concept
 
@@ -167,11 +168,117 @@ def inject_into_bdgb(trends):
     return injected
 
 
+def json_to_pdf_daily(json_path):
+    """Convierte un reporte diario JSON a PDF."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib import colors
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    pdf_path = json_path.replace(".json", ".pdf")
+    doc = SimpleDocTemplate(pdf_path, pagesize=A4,
+                            title=f"Trend Report {data['date']}")
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(Paragraph(f"<b>BDGB Trend Report</b>", styles["Title"]))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(f"Fecha: {data['date']}", styles["Normal"]))
+    story.append(Paragraph(f"Fuente: {data['source']}", styles["Normal"]))
+    story.append(Paragraph(f"Tendencias detectadas: {data['trend_count']}", styles["Normal"]))
+    story.append(Spacer(1, 12))
+
+    table_data = [["#", "Tema", "Score", "Categoria"]]
+    for i, t in enumerate(data["trends"], 1):
+        table_data.append([str(i), t["topic"], str(t["score"]), t.get("category", "")])
+
+    t = Table(table_data, colWidths=[30, 280, 60, 120])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2C3E50")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#ECF0F1")]),
+    ]))
+    story.append(t)
+    doc.build(story)
+    return pdf_path
+
+
+def json_to_pdf_weekly(json_path):
+    """Convierte un resumen semanal JSON a PDF."""
+    from reportlab.lib.pagesizes import A4
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet
+    from reportlab.lib import colors
+
+    with open(json_path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+
+    pdf_path = json_path.replace(".json", ".pdf")
+    doc = SimpleDocTemplate(pdf_path, pagesize=A4,
+                            title=f"Weekly Trend Summary W{data['week']}")
+    styles = getSampleStyleSheet()
+    story = []
+
+    story.append(Paragraph(f"<b>BDGB Weekly Trend Summary</b>", styles["Title"]))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(f"Semana: W{data['week']} ({data['year']})", styles["Normal"]))
+    if data["date_range"]["from"] and data["date_range"]["to"]:
+        story.append(Paragraph(f"Periodo: {data['date_range']['from']} — {data['date_range']['to']}", styles["Normal"]))
+    story.append(Paragraph(f"Dias cubiertos: {data['days_covered']}", styles["Normal"]))
+    story.append(Paragraph(f"Topicos unicos: {data['total_unique_topics']}", styles["Normal"]))
+    story.append(Spacer(1, 12))
+
+    story.append(Paragraph("<b>Top Tendencias</b>", styles["Heading2"]))
+    story.append(Spacer(1, 6))
+
+    table_data = [["#", "Tema", "Score Prom.", "Apariciones", "Categoria"]]
+    for i, t in enumerate(data["top_trends"], 1):
+        table_data.append([str(i), t["topic"], str(t["avg_score"]),
+                           str(t["appearances"]), t["category"]])
+
+    t = Table(table_data, colWidths=[25, 240, 70, 70, 100])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#2C3E50")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [colors.white, colors.HexColor("#ECF0F1")]),
+    ]))
+    story.append(t)
+    doc.build(story)
+    return pdf_path
+
+
+def export_all_to_pdf():
+    """Convierte todos los JSONs de daily/ y weekly/ a PDF."""
+    count = 0
+    for f in sorted(glob.glob(os.path.join(DAILY_DIR, "*.json"))):
+        pdf = f.replace(".json", ".pdf")
+        if not os.path.exists(pdf):
+            json_to_pdf_daily(f)
+            count += 1
+            print(f"  PDF: {os.path.basename(pdf)}")
+    for f in sorted(glob.glob(os.path.join(WEEKLY_DIR, "*.json"))):
+        pdf = f.replace(".json", ".pdf")
+        if not os.path.exists(pdf):
+            json_to_pdf_weekly(f)
+            count += 1
+            print(f"  PDF: {os.path.basename(pdf)}")
+    return count
+
+
 def cmd_daily():
     print("[TRENDTRACKER] Obteniendo tendencias...")
     trends = fetch_trends()
     path = save_daily_report(trends)
     print(f"[TRENDTRACKER] Reporte diario guardado: {path}")
+    pdf = json_to_pdf_daily(path)
+    print(f"[TRENDTRACKER] PDF: {pdf}")
     n = inject_into_bdgb(trends[:5])
     if n > 0:
         print(f"[TRENDTRACKER] {n} tendencias inyectadas en BDGB")
@@ -181,6 +288,8 @@ def cmd_weekly():
     print("[TRENDTRACKER] Generando resumen semanal...")
     path, summary = generate_weekly_summary()
     print(f"[TRENDTRACKER] Resumen semanal guardado: {path}")
+    pdf = json_to_pdf_weekly(path)
+    print(f"[TRENDTRACKER] PDF: {pdf}")
     print(json.dumps(summary["top_trends"][:5], indent=2, ensure_ascii=False))
 
     # Aprender los top trends como terminos NLP
@@ -215,6 +324,9 @@ if __name__ == "__main__":
         cmd_daily()
     elif "--weekly" in sys.argv:
         cmd_weekly()
+    elif "--export-pdf" in sys.argv:
+        n = export_all_to_pdf()
+        print(f"[TRENDTRACKER] {n} PDFs generados")
     elif "--status" in sys.argv:
         cmd_status()
     elif "--inject" in sys.argv:
