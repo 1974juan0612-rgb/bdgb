@@ -17,6 +17,7 @@ add_executable(bdgb
     src/learning.c
     src/nlp.c
     src/agent.c
+    src/glifo.c
     crypt/bdgb_crypt.c
 )
 
@@ -31,6 +32,7 @@ add_executable(bdgb_test
     src/learning.c
     src/nlp.c
     src/agent.c
+    src/glifo.c
     crypt/bdgb_crypt.c
 )
 target_compile_definitions(bdgb_test PRIVATE BDGB_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

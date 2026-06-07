@@ -6,6 +6,7 @@
 #include "learning.h"
 #include "nlp.h"
 #include "agent.h"
+#include "glifo.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -170,6 +171,7 @@ static int cmd_interactive(void) {
     learning_init(data_path);
     nlp_set_data_path(data_path);
     nlp_init();
+    glifo_init();
 
     init_system();
     init_semantics();
@@ -215,6 +217,7 @@ int main(int argc, char *argv[]) {
     learning_init(data_path);
     nlp_set_data_path(data_path);
     nlp_init();
+    glifo_init();
 
     if (argc < 2) return cmd_interactive();
 
@@ -224,6 +227,19 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], "--agent-run") == 0) return cmd_agent_run(argc, argv);
     if (strcmp(argv[1], "--init") == 0) { clear_data(); init_system(); init_semantics(); nlp_init(); nlp_save(); printf("{\"status\":\"ok\"}\n"); return 0; }
     if (strcmp(argv[1], "--supervisor-tick") == 0) { agent_init(); agent_supervisor_tick(); return 0; }
+    if (strcmp(argv[1], "--glifo-run") == 0 && argc >= 3) return glifo_run(argv[2], argc > 3 ? argv[3] : NULL);
+    if (strcmp(argv[1], "--glifo-list") == 0) {
+        GlifoDef list[MAX_GLIFOS];
+        int n = glifo_list(list, MAX_GLIFOS);
+        printf("{\"glifos\":[");
+        for (int i = 0; i < n; i++) {
+            if (i > 0) printf(",");
+            printf("{\"id\":\"%s\",\"nombre\":\"%s\",\"ejecuciones\":%u,\"exitosas\":%u,\"fallidas\":%u}",
+                   list[i].id, list[i].nombre, list[i].ejecuciones, list[i].exitosas, list[i].fallidas);
+        }
+        printf("]}\n");
+        return 0;
+    }
     if (strcmp(argv[1], "--learn") == 0 && argc >= 3) {
         int n = nlp_learn_from_text(argv[2], 100);
         printf("{\"learned\":%d,\"total\":%d}\n", n, nlp_term_count());
@@ -257,6 +273,8 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "  --export-nodes dump JSON de todos los nodos\n");
     fprintf(stderr, "  --add-concept <n> <c> <w> <r>\n");
     fprintf(stderr, "  --agent-run <id> ejecuta pipeline de agente\n");
+    fprintf(stderr, "  --glifo-run <id> [args]  ejecuta glifo nativo\n");
+    fprintf(stderr, "  --glifo-list      lista glifos compilados\n");
     fprintf(stderr, "  --init         limpia e inicializa datos\n");
     fprintf(stderr, "  --learn <text>  extrae y aprende nuevos terminos NLP\n");
     fprintf(stderr, "  --show-terms    lista diccionario NLP completo\n");
