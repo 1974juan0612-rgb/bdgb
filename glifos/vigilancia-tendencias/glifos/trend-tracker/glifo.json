@@ -1,0 +1,11 @@
+{
+  "id": "trend-tracker",
+  "nombre": "Trend Tracker Diario",
+  "tipo": "externo",
+  "lenguaje": "python3",
+  "descripcion": "Script Python. Google Trends + pytrends, reporte JSON/PDF, resumen semanal.",
+  "entry": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
+  "estado": "activo",
+  "sistema": "vigilancia-tendencias",
+  "dependencias": ["primo"]
+}

@@ -5,17 +5,17 @@
   "pipeline": {
     "fetch-trends": {
       "tool": "system",
-      "args": "python3 glifos/trend-tracker/trend_tracker.py --daily",
+      "args": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --daily",
       "desc": "Obtener Google Trends y guardar reporte diario"
     },
     "generate-daily-report": {
       "tool": "system",
-      "args": "python3 agents/trend-tracker/trend_tracker.py --status",
+      "args": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --status",
       "desc": "Verificar estado del reporte diario"
     },
     "check-weekly-summary": {
       "tool": "system",
-      "args": "python3 agents/trend-tracker/trend_tracker.py --weekly",
+      "args": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --weekly",
       "desc": "Si hay 7 reportes, generar resumen semanal"
     }
   }

@@ -7,6 +7,7 @@
       "sistema": "vigilancia-tendencias",
       "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
       "estado": "activo",
+      "ruta": "vigilancia-tendencias/",
       "glifos": ["primo", "trend-tracker"]
     }
   ],
@@ -19,6 +20,7 @@
       "estado": "activo",
       "creado": "2026-06-08",
       "sistema": "vigilancia-tendencias",
+      "ruta": "vigilancia-tendencias/glifos/primo/",
       "schedule": {
         "tipo": "diario",
         "hora": "08:00"
@@ -31,18 +33,19 @@
     },
     {
       "id": "trend-tracker",
-      "nombre": "Trend Tracker Diario (externo)",
+      "nombre": "Trend Tracker Diario",
       "tipo": "externo",
       "descripcion": "Script Python. Google Trends + pytrends, reporte JSON/PDF, resumen semanal.",
       "estado": "activo",
       "creado": "2026-06-08",
       "sistema": "vigilancia-tendencias",
+      "ruta": "vigilancia-tendencias/glifos/trend-tracker/",
+      "entry": "python3 viglancia-tendencias/glifos/trend-tracker/trend_tracker.py",
       "schedule": {
         "tipo": "diario",
         "hora": "08:05"
       },
       "dependencias": ["primo"],
-      "ruta": "trend-tracker/trend_tracker.py",
       "metricas": {
         "ejecuciones": 0,
         "ultimo_report": null
@@ -56,6 +59,7 @@
       "estado": "inactivo",
       "creado": "2026-06-05",
       "sistema": null,
+      "ruta": "youtube-automator/",
       "schedule": {
         "tipo": "semanal",
         "dia": "lunes",

@@ -27,7 +27,7 @@ WEEKLY_DIR = os.path.join(AGENT_DIR, "weekly")
 
 BDGB_ROOT = os.environ.get(
     "BDGB_ROOT",
-    os.path.normpath(os.path.join(AGENT_DIR, "..", ".."))
+    os.path.normpath(os.path.join(AGENT_DIR, "..", "..", "..", ".."))
 )
 
 # ---- MOCK TRENDS (fallback when pytrends not available) ----

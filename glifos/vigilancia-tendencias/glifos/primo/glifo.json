@@ -1,0 +1,9 @@
+{
+  "id": "primo",
+  "nombre": "Glifo Primo - Trend Tracker",
+  "tipo": "nativo",
+  "descripcion": "Compilado en el binario BDGB. Fetch via curl/wget, reporte .txt, inyeccion en BDGB.",
+  "entry": "bdgb --glifo-run primo",
+  "estado": "activo",
+  "sistema": "vigilancia-tendencias"
+}

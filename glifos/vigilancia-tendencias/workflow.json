@@ -1,0 +1,34 @@
+{
+  "sistema": "vigilancia-tendencias",
+  "descripcion": "Monitoreo diario de Google Trends, reportes y alimentacion del nucleo BDGB",
+  "version": "1.0",
+  "schedule": {
+    "tipo": "diario",
+    "hora": "08:00"
+  },
+  "pipeline": [
+    {
+      "orden": 1,
+      "glifo": "primo",
+      "accion": "fetch + report + inject",
+      "args": [],
+      "desc": "Obtener tendencias via RSS, guardar .txt, inyectar en BDGB"
+    },
+    {
+      "orden": 2,
+      "glifo": "trend-tracker",
+      "accion": "--daily",
+      "args": ["--daily"],
+      "desc": "Reporte JSON + PDF, inyeccion adicional via Python"
+    }
+  ],
+  "post_pipeline": [
+    {
+      "condicion": "cada 7 dias",
+      "glifo": "trend-tracker",
+      "accion": "--weekly",
+      "args": ["--weekly"],
+      "desc": "Resumen semanal si hay 7 reportes diarios"
+    }
+  ]
+}

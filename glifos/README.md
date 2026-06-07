@@ -2,83 +2,51 @@
 
 ## Arquitectura
 
-Cada **Glifo** pertenece a un **Sistema**. Un Sistema es, en esencia, un **flujo de trabajo** con un proposito definido. Los glifos son los nodos operativos que ejecutan las tareas dentro de ese flujo.
+Cada **Glifo** pertenece a un **Sistema**. Un Sistema es un **flujo de trabajo** con un proposito definido. Los glifos son los nodos operativos.
+
+Los sistemas viven en su propia carpeta raiz:
 
 ```
-SISTEMA (flujo de trabajo)
-  ├── Glifo A  (tarea 1)
-  ├── Glifo B  (tarea 2)
-  └── Glifo C  (tarea 3)
+glifos/
+  README.md
+  registry.json
+  vigilancia-tendencias/         ← sistema
+    README.md
+    workflow.json                ← pipeline del sistema
+    glifos/
+      primo/glifo.json           ← config del glifo nativo
+      trend-tracker/             ← codigo del glifo externo
+        glifo.json
+        trend_tracker.py
+        daily/
+        weekly/
+  youtube-automator/             ← sistema pendiente de definir
+    config.json
 ```
 
 ## Orden de creacion
 
-Lo correcto es:
-
-1. **Definir el Sistema** — ?Que flujo de trabajo quiero automatizar? Ej: "Vigilancia de Tendencias", "Publicacion Automatica", "Analisis de Datos"
-2. **Crear los Glifos** — ?Que tareas atomicas necesita ese flujo? Cada tarea es un glifo
-
-Los glifos pueden crearse por separado y despues asignarse a un sistema, pero la arquitectura esta pensada para que el sistema se defina primero.
-
-## Registro
-
-El archivo `registry.json` contiene la definicion de todos los sistemas y sus glifos. Cada entrada tiene:
-
-```json
-{
-  "sistema": "nombre-del-sistema",
-  "descripcion": "Flujo de trabajo que automatiza",
-  "glifos": [
-    {
-      "id": "identificador-unico",
-      "nombre": "Nombre del Glifo",
-      "tipo": "nativo | externo",
-      "schedule": "diario | semanal | manual",
-      "dependencias": ["glifo-id-1", "glifo-id-2"]
-    }
-  ]
-}
-```
+1. **Definir el Sistema** — ?Que flujo de trabajo?
+2. **Crear los Glifos** — ?Que tareas atomicas?
 
 ## Tipos de Glifo
 
 | Tipo | Descripcion |
 |------|-------------|
-| **Nativo** | Compilado en el binario BDGB (`src/glifo.c`). Ejecucion rapida, cero dependencias externas |
-| **Externo** | Script en Python u otro lenguaje en `glifos/<id>/`. Ejecucion via `system()` o subproceso |
+| **Nativo** | Compilado en el binario BDGB (`src/glifo.c`). Cero dependencias |
+| **Externo** | Script (Python, etc.) dentro de la carpeta del sistema |
 
-El **Glifo Primo** (`id: "primo"`) es el glifo nativo fundacional: Trend Tracker. Puede ejecutarse con:
+## Comandos
 
 ```bash
-bdgb --glifo-run primo
+bdgb --glifo-list            # lista todos los glifos disponibles
+bdgb --glifo-run primo       # ejecuta glifo nativo
+python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --daily
 ```
 
-## Sistemas definidos actualmente
+## Sistemas definidos
 
 | Sistema | Glifos | Estado |
 |---------|--------|--------|
-| _(pendiente de definir)_ | `primo` (nativo) | Activo |
-| _(pendiente de definir)_ | `trend-tracker` (externo) | Activo |
-| _(pendiente de definir)_ | `youtube-automator` (externo) | Inactivo |
-
-## Ciclo de vida de un Sistema
-
-1. **Definicion** — Se crea la entrada en `registry.json` con el flujo de trabajo
-2. **Implementacion** — Se crean los glifos necesarios (nativos en C o externos en Python)
-3. **Registro** — Cada glifo se asocia al sistema via `registry.json`
-4. **Ejecucion** — El supervisor del BDGB ejecuta los glifos segun su schedule
-5. **Retroalimentacion** — Los resultados se guardan en BDGB (conceptos, NLP, reportes)
-
-## Proximo sistema recomendado
-
-Antes de crear mas glifos, define el primer sistema. Ejemplo:
-
-```json
-{
-  "sistema": "vigilancia-tendencias",
-  "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
-  "glifos": ["primo", "trend-tracker"]
-}
-```
-
-Esto agrupa el glifo nativo `primo` y el externo `trend-tracker` bajo un mismo proposito.
+| `vigilancia-tendencias` | `primo`, `trend-tracker` | Activo |
+| `youtube-automator` | (sin sistema asignado) | Inactivo |
