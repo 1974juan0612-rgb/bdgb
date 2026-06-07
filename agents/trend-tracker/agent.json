@@ -1,0 +1,28 @@
+{
+  "id": "trend-tracker",
+  "nombre": "Trend Tracker Diario",
+  "descripcion": "Monitorea Google Trends a diario, genera reporte y cada 7 dias un resumen semanal.",
+  "estado": "activo",
+  "version": "1.0",
+  "creado": "2026-06-08",
+  "repo": "https://raw.githubusercontent.com/1974juan0612-rgb/bdgb/master/agents/trend-tracker",
+  "schedule": {
+    "tipo": "diario",
+    "hora": "08:00"
+  },
+  "pipeline": [
+    "fetch-trends",
+    "generate-daily-report",
+    "check-weekly-summary"
+  ],
+  "herramientas": [
+    "python3",
+    "pytrends",
+    "bdgb-cli"
+  ],
+  "metricas": {
+    "ejecuciones": 0,
+    "ultimo_report": null,
+    "dias_consecutivos": 0
+  }
+}
