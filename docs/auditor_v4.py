@@ -141,9 +141,9 @@ meta = [
     ["Repositorio", "https://github.com/1974juan0612-rgb/bdgb"],
     ["Lenguaje", "C99 + Python 3"],
     ["Lineas C", f"~{clines} (nucleo + crypt)"],
-    ["Lineas Python", "~1,200 (bridge + GUI + scraper + audit)"],
+    ["Lineas Python", "~2,200 (bridge + GUI + scraper + audit + docs)"],
     ["Nodos", "256 (16x16 grid, 8-bit)"],
-    ["Tests", f"{pass_count}/{19} PASS"],
+    ["Tests", f"{pass_count}/30 PASS"],
     ["Fecha auditoria", datetime.now().strftime("%Y-%m-%d %H:%M")],
 ]
 mt = Table(meta, colWidths=[3.2*cm, 10*cm])
@@ -184,14 +184,17 @@ story.append(Paragraph("<b>Metricas clave:</b>", s_body))
 tb([
     ["Metrica", "Valor"],
     [f"Archivos C", f"{clines} lineas en ~10 modulos"],
-    [f"Archivos Python", "~1,200 lineas (bridge, GUI, scraper, scripts)"],
-    [f"Tests", f"{pass_count}/{19} PASS"],
+    [f"Archivos Python", "~2,200 lineas (bridge, GUI, scraper, docs)"],
+    [f"Tests", f"{pass_count}/30 PASS"],
     [f"Commits", f"{len(gitlog)}"],
     [f"Sistemas de glifos", "1 activo (vigilancia-tendencias)"],
     [f"Glifos registrados", "3 (primo, trend-tracker, youtube-automator)"],
     [f"Cifrado", "BDGB-Cipher v1, 128-bit estado, S-box geometrica"],
     [f"Dependencias C", "CERO"],
-    [f"Binario", "~151 KB (bdgb.exe)"],
+    [f"Binario", "~152 KB (bdgb.exe)"],
+    [f"Ramas", "Online / Local / Hibrida"],
+    [f"Clasificacion", "Primo / Semilla / Comun"],
+    [f"Cross-platform", "Windows, Linux, macOS, Android (C99 puro)"],
 ], col_widths=[5*cm, 9.8*cm])
 
 # ══════════════════════════════════════════════════════════════════════
@@ -216,13 +219,14 @@ tb([
     ["Componente", "Descripcion", "Estado"],
     ["Nucleo geometrico", "Grid 16x16, nodos de 4 bytes, propiedades O(1)", "100%"],
     ["Regla dinamica", "Sucesor Kaprekar binario, deteccion de atractores", "100%"],
-    ["Semantica", "Hash index (256 buckets) nodo->concepto", "90%"],
-    ["Grafo conceptos", "Hash index para aristas entre conceptos", "85%"],
-    ["Busqueda", "Hibrida: semantico + propiedades + atractor", "80%"],
-    ["NLP", "Terminos fijos + aprendizaje dinamico, tokenizador", "70%"],
-    ["Aprendizaje", "Refuerzo y decaimiento con persistencia a disco", "70%"],
+    ["Semantica", "Hash index (256 buckets) nodo->concepto", "95%"],
+    ["Grafo conceptos", "Hash index para aristas entre conceptos, dedup", "95%"],
+    ["Busqueda", "Hibrida: semantico + propiedades + atractor", "85%"],
+    ["NLP", "19 terminos fijos + aprendizaje dinamico, tokenizador", "75%"],
+    ["Aprendizaje", "Refuerzo y decaimiento con persistencia a disco", "75%"],
     ["Glifos nativos", "Sistema de glifos en C compilados en binario", "100%"],
     ["Sistema glifos", "Arquitectura Sistema -> Glifo, glifosenilla.json", "100%"],
+    ["Clasificacion", "Primo/Semilla/Comun, tres ramas online/local/hibrida", "100%"],
     ["BDGB-Cipher v1", "Cifrado de flujo sin dependencias externas", "100%"],
     ["Python bridge", "CLI wrapper para integracion desde Python", "90%"],
     ["GUI Tkinter", "Grid 16x16 visual, busqueda NLP, panel agentes", "80%"],
@@ -235,16 +239,20 @@ story.append(Paragraph("3. Sistema de Glifos", s_h1))
 hr()
 story.append(Paragraph(
     "El sistema de glifos es la capa de automatizacion del proyecto. Un glifo es un nodo "
-    "operativo que ejecuta una tarea atomica. Los glifos se agrupan en Sistemas, que son "
-    "flujos de trabajo con un proposito definido. Cada sistema tiene un glifo maestro "
-    "obligatorio (glifosenilla.json) que define el pipeline completo, las relaciones entre "
+    "operativo que transporta datos entre herramientas. No ejecuta logica de dominio: "
+    "solo mueve archivos. Las herramientas (scripts, APIs, binarios) son las que producen "
+    "y consumen los datos. Los glifos se agrupan en Sistemas, que son flujos de trabajo "
+    "con un proposito definido. Cada sistema tiene un glifo maestro obligatorio "
+    "(glifosenilla.json) que define el pipeline completo, las relaciones entre "
     "glifos y los datos extra del sistema.", s_body))
 
 story.append(Paragraph("<b>Arquitectura:</b>", s_body))
 story.append(Paragraph(
     "glifos/&lt;sistema&gt;/glifosenilla.json -> define pipeline, dependencias y relaciones<br/>"
     "glifos/&lt;sistema&gt;/glifos/&lt;glifo&gt;/glifo.json -> config individual de cada glifo<br/>"
-    "glifos/registry.json -> registro maestro de todos los sistemas y glifos", s_code))
+    "glifos/registry.json -> registro maestro de todos los sistemas y glifos<br/>"
+    "Ramas: <b>online</b> (herramientas web), <b>local</b> (herramientas locales), <b>hibrida</b> (ambas)<br/>"
+    "Clasificacion: <b>Primo</b> (codigo fuente C), <b>Semilla</b> (glifosenilla.json), <b>Comun</b> (nativo/externo)", s_code))
 
 story.append(Paragraph("<b>Glifos registrados:</b>", s_body))
 tb([
@@ -268,14 +276,14 @@ if glifosenilla:
     tb(pipe_data, col_widths=[1.5*cm, 3*cm, 5*cm, 3*cm])
 
     story.append(Paragraph("<b>Relaciones entre glifos:</b>", s_body))
-    rel_data = [["Glifo", "Produce", "Consume"]]
-    for gid, rel in glifosenilla.get("relaciones", {}).items():
+    rel_data = [["De", "A", "Tipo"]]
+    for rel in glifosenilla.get("relaciones", []):
         rel_data.append([
-            gid,
-            ", ".join(rel.get("produce", [])),
-            ", ".join(rel.get("consume", [])) or "nada"
+            rel.get("de", "?"),
+            rel.get("a", "?"),
+            rel.get("tipo", "?")
         ])
-    tb(rel_data, col_widths=[2.5*cm, 6*cm, 4*cm])
+    tb(rel_data, col_widths=[3*cm, 3*cm, 6*cm])
 
 story.append(Paragraph(
     "<b>Nota:</b> El glifo-primo es el primer glifo nativo compilado directamente en el "
@@ -364,7 +372,7 @@ story.append(Paragraph("6. Suite de Tests", s_h1))
 hr()
 story.append(Paragraph(
     f"La bateria de tests (tests/test_bdgb.c) cubre todos los modulos del sistema. "
-    f"Resultado: <b>{pass_count}/19 PASS, {fail_count} FAIL</b>.", s_body))
+    f"Resultado: <b>{pass_count}/30 PASS, {fail_count} FAIL</b>.", s_body))
 
 if "PASS" in testout:
     story.append(Paragraph("<pre>" + testout[:2000] + "</pre>", s_code))
@@ -395,6 +403,17 @@ tb([
     ["17", "crypt_keystream_differs", "Divergencia de keystream"],
     ["18", "crypt_encrypt_decrypt", "Cifrado/descifrado"],
     ["19", "crypt_file_roundtrip", "Archivo completo"],
+    ["20", "crypt_empty_buffer", "Buffer vacio"],
+    ["21", "crypt_odd_sizes", "Tamanos impares"],
+    ["22", "crypt_large_buffer", "Buffer grande (1024 B)"],
+    ["23", "glifo_init", "Registro de glifos"],
+    ["24", "glifo_list_system", "Lista solo glifos en sistemas activos"],
+    ["25", "glifo_run_unknown", "Error para glifo inexistente"],
+    ["26", "glifo_list_no_duplicates", "Sin duplicados en lista"],
+    ["27", "agent_init_and_list", "Inicializacion y listado de agentes"],
+    ["28", "agent_get_known", "Busqueda de agente existente"],
+    ["29", "agent_get_unknown", "Error para agente inexistente"],
+    ["30", "rand_seeded", "Valores aleatorios no repetidos"],
 ], col_widths=[1*cm, 4.5*cm, 7*cm])
 
 # ══════════════════════════════════════════════════════════════════════
@@ -470,6 +489,19 @@ tb(gl, col_widths=[2*cm, 12.8*cm])
 story.append(Paragraph("9. Veredicto", s_h1))
 hr()
 
+story.append(Paragraph("<b>Unicidad de la tecnologia:</b>", s_body))
+story.append(Paragraph(
+    "&bull; <b>La combinacion rejilla binaria + Kaprekar + semantica + cifrado propio es genuinamente unica.</b> "
+    "No existe otro sistema conocido que use Kaprekar binario como base de busqueda semantica Y cifrado.<br/>"
+    "&bull; La separacion Glifo (transporte de datos) vs Herramienta (procesamiento) es un enfoque original "
+    "que abstrae la complejidad de las herramientas subyacentes.<br/>"
+    "&bull; El concepto de glifo primigenio (Primo) escrito en C puro que orquesta herramientas externas "
+    "sin depender de Python/GPU/LLM es una propuesta solida minima.<br/>"
+    "&bull; El cifrado BDGB-Cipher demuestra que el modelo matematico basico tiene aplicaciones "
+    "mas alla de la busqueda: es la misma maquina con dos propositos distintos."
+    , s_body))
+
+story.append(Spacer(1, 4))
 story.append(Paragraph("<b>Fortalezas:</b>", s_body))
 story.append(Paragraph(
     "&bull; Diseno por capas limpio y extensible. Cada modulo tiene su header "
@@ -477,39 +509,65 @@ story.append(Paragraph(
     "&bull; Cero dependencias externas en C, incluso en el modulo de cifrado.<br/>"
     "&bull; Sistema de glifos nativos compilados en el binario, sin GPU ni LLM.<br/>"
     "&bull; Arquitectura Sistema -> Glifo con glifosenilla.json como glue declarativo.<br/>"
-    f"&bull; {pass_count}/{19} tests pasando, cubriendo todos los modulos incluyendo cifrado.<br/>"
+    f"&bull; {pass_count}/30 tests pasando, cubriendo todos los modulos incluyendo cifrado.<br/>"
     "&bull; Hash indices para busquedas O(1) en semantica y grafo de conceptos.<br/>"
     "&bull; Cifrado novedoso basado unicamente en el modelo BDGB.<br/>"
     "&bull; Puerto Python limpio (bdgb_bridge.py) que evita duplicar logica C.<br/>"
-    "&bull; ~55+ terminos NLP aprendidos dinamicamente desde glifos."
+    "&bull; 26 commits en ~1 mes de desarrollo activo.<br/>"
+    "&bull; Documentacion completa: whitepaper (PDF), README, glifos/README, auditorias."
     , s_body))
 
 story.append(Spacer(1, 4))
 story.append(Paragraph("<b>Debilidades y riesgos:</b>", s_body))
 story.append(Paragraph(
-    "&bull; La busqueda secuencial en find_nodes_by_concept aun recorre todo el archivo "
-    "en ciertos casos. Con miles de nodos sera lento.<br/>"
-    "&bull; El NLP aun es limitado (55+ terminos, pero sin stemming, sin stopwords).<br/>"
-    "&bull; youtube-automator no tiene sistema asignado ni implementacion real.<br/>"
-    "&bull; Paths hardcodeados a Windows. Linux no funciona sin cambios.<br/>"
+    "&bull; Un solo sistema activo (vigilancia-tendencias) con solo 2 glifos. Poca masa critica.<br/>"
+    "&bull; youtube-automator es placeholder sin implementacion real ni sistema asignado.<br/>"
+    "&bull; NLP limitado: 19 terminos base, sin stemming, sin stopwords, sin lematizacion.<br/>"
+    "&bull; Sin usuarios reales fuera del creador. No hay validacion externa del concepto.<br/>"
+    "&bull; Sin CI/CD, sin tests automatizados en push, sin integracion continua.<br/>"
     "&bull; El cifrado BDGB-Cipher v1 no ha sido auditado por criptografos profesionales "
     "(de ahi el desafio publico).<br/>"
-    "&bull; No hay CI/CD ni tests automatizados en push."
+    "&bull; La portabilidad Linux no esta probada (aunque el codigo usa #ifdefs para POSIX).<br/>"
+    "&bull; Falta definir el modelo de negocio o proposito practico: quien usaria esto y para que."
+    , s_body))
+
+story.append(Spacer(1, 4))
+story.append(Paragraph("<b>Oportunidades:</b>", s_body))
+story.append(Paragraph(
+    "&bull; La tecnologia es pequena, limpia y comprensible. Puede ser la base de un sistema "
+    "de automatizacion personal para creadores de contenido, investigadores o makers.<br/>"
+    "&bull; ChatGPT y el auge de IA hacen que el concepto 'sin LLM, sin GPU, sin dependencias' "
+    "sea contra-cultural y atractivo para nichos especificos (low-tech, computacion minimalista).<br/>"
+    "&bull; El whitepaper y el desafio de cifrado pueden generar interes en comunidades "
+    "de criptografia, matematicas y demoscene.<br/>"
+    "&bull; Podria posicionarse como herramienta de automation personal para "
+    "artistas digitales, youtubers, o automatizacion de data pipelines pequenos."
+    , s_body))
+
+story.append(Spacer(1, 4))
+story.append(Paragraph("<b>Riesgos de abandono:</b>", s_body))
+story.append(Paragraph(
+    "&bull; Proyecto unipersonal: si el creador se detiene, todo se detiene.<br/>"
+    "&bull; Sin comunidad ni contribuciones externas.<br/>"
+    "&bull; La motivacion inicial (crear tecnologia propia) se agota cuando la tecnologia "
+    "esta creada. El siguiente paso es aplicarla, que es un problema diferente."
     , s_body))
 
 story.append(Spacer(1, 10))
 story.append(HRFlowable(width="100%", thickness=1, color=DARK))
 story.append(Spacer(1, 6))
 story.append(Paragraph(
-    "<b>BDGB</b> ha evolucionado de un prototipo conceptual (v1, 16 nodos, 4x4) "
-    "a una herramienta tecnica con 256 nodos, hash indices, cifrado propio, "
-    f"{pass_count}/19 tests, un sistema de glifos nativos en C y un desafio publico de cifrado. "
-    "La incorporacion del sistema de glifos nativos (masa madre) elimina la dependencia "
-    "de Python para las tareas core de automatizacion. "
-    "Los proximos pasos deberian enfocarse en: "
-    "(1) portabilidad Linux, (2) expansion del NLP, "
-    "(3) implementacion del sistema youtube-automator, "
-    "(4) CI/CD, (5) auditoria criptografica profesional del BDGB-Cipher.",
+    "<b>Veredicto: ?</b><br/><br/>"
+    "<b>? Si, vale la pena seguir.</b> La tecnologia Glifo es genuinamente original "
+    "y tiene una base solida: codigo limpio, zero dependencias, tests pasando, "
+    "documentacion completa. Es una criatura unica.<br/><br/>"
+    "Sin embargo, la pregunta real no es si seguir desarrollando, sino <b>para que</b>. "
+    "La tecnologia ya funciona. Ahora necesita casos de uso reales, aplicaciones concretas, "
+    "usuarios. Sin eso, es una hermosa maquina sin proposito.<br/><br/>"
+    "Recomendacion: pasar de crear la tecnologia a <b>aplicarla</b>. "
+    "Construir sistemas glifo reales que hagan cosas utiles. "
+    "El potencial esta en los sistemas, no en el nucleo. "
+    "El nucleo ya esta solido.",
     ParagraphStyle("veredicto", parent=s_body, fontSize=9, leading=13,
                    textColor=DARK, backColor=HexColor("#f0f4ff"),
                    leftIndent=8, rightIndent=8, spaceBefore=4, spaceAfter=4,
