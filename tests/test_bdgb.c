@@ -5,6 +5,7 @@
 #include "search.h"
 #include "learning.h"
 #include "nlp.h"
+#include "glifo.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -328,6 +329,49 @@ static void test_crypt_file_roundtrip(void) {
     PASS();
 }
 
+static void test_glifo_init_count(void) {
+    TEST("glifo_init registers glifos");
+    int n = glifo_init();
+    ASSERT(n > 0, "should register at least one glifo");
+    ASSERT(n <= MAX_GLIFOS, "should not exceed max");
+    PASS();
+}
+
+static void test_glifo_list_returns_system_glifos(void) {
+    TEST("glifo_list returns only glifos in active systems");
+    glifo_init();
+    GlifoDef list[MAX_GLIFOS];
+    int n = glifo_list(list, MAX_GLIFOS);
+    ASSERT(n > 0, "primo should be in active system");
+    int found = 0;
+    for (int i = 0; i < n; i++) {
+        if (strcmp(list[i].id, "primo") == 0) found = 1;
+    }
+    ASSERT(found, "primo should be listed");
+    PASS();
+}
+
+static void test_glifo_run_unknown(void) {
+    TEST("glifo_run returns GLIFO_ERR for unknown glifo");
+    glifo_init();
+    int r = glifo_run("glifo-que-no-existe", "");
+    ASSERT(r == GLIFO_ERR, "should return error");
+    PASS();
+}
+
+static void test_glifo_list_no_duplicates(void) {
+    TEST("glifo_list no duplicate IDs");
+    glifo_init();
+    GlifoDef list[MAX_GLIFOS];
+    int n = glifo_list(list, MAX_GLIFOS);
+    for (int i = 0; i < n; i++) {
+        for (int j = i + 1; j < n; j++) {
+            ASSERT(strcmp(list[i].id, list[j].id) != 0, "duplicate ID found");
+        }
+    }
+    PASS();
+}
+
 static void run_all_tests(void) {
     printf("=== BDGB TESTS ===\n\n");
 
@@ -351,12 +395,25 @@ static void run_all_tests(void) {
     test_crypt_encrypt_decrypt();
     test_crypt_file_roundtrip();
 
+    test_glifo_init_count();
+    test_glifo_list_returns_system_glifos();
+    test_glifo_run_unknown();
+    test_glifo_list_no_duplicates();
+
     printf("\n=== RESULTADOS: %d/%d PASS, %d FAIL ===\n",
            tests_pass, tests_pass + tests_fail, tests_fail);
 }
 
 int main(void) {
     resolve_test_path();
+#ifdef BDGB_SOURCE_DIR
+    /* Set BDGB_ROOT so glifo_load_systems() finds glifos/registry.json */
+    {
+        char ev[512];
+        snprintf(ev, sizeof(ev), "BDGB_ROOT=%s", BDGB_SOURCE_DIR);
+        putenv(ev);
+    }
+#endif
     cleanup();
     bdgb_init(TEST_PATH);
     run_all_tests();

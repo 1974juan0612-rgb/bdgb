@@ -7,7 +7,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from bdgb_bridge import (search, export_nodes, agent_run,
                          load_nodes_from_disk, decode_props, props_str,
-                         BDGB_ROOT, DATA_PATH, AGENTS_DIR)
+                         BDGB_ROOT, DATA_PATH)
 
 COLORS = {
     "bg": "#1a1a2e",
@@ -23,11 +23,11 @@ COLORS = {
 
 
 def _load_agents():
-    registry_path = os.path.join(BDGB_ROOT, "agents", "registry.json")
+    registry_path = os.path.join(BDGB_ROOT, "glifos", "registry.json")
     try:
         with open(registry_path, "r") as f:
             data = json.load(f)
-        return data.get("agentes", [])
+        return data.get("glifos", [])
     except Exception:
         return []
 

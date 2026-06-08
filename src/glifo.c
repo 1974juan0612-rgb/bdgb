@@ -26,15 +26,120 @@ int glifo_register(const char *id, const char *nombre,
     strncpy(g->id, id, sizeof(g->id) - 1);
     strncpy(g->nombre, nombre, sizeof(g->nombre) - 1);
     g->run = run;
+    g->sistema[0] = 0;
     g->ejecuciones = 0;
     g->exitosas = 0;
     g->fallidas = 0;
     return 0;
 }
 
+/* ---- Helpers JSON para leer registry.json ---- */
+
+static int json_strval(const char *json, const char *key, char *out, size_t outsz) {
+    char search[128];
+    snprintf(search, sizeof(search), "\"%s\"", key);
+    const char *p = strstr(json, search);
+    if (!p) return -1;
+    p = strchr(p, ':');
+    if (!p) return -1;
+    p++;
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+    if (*p != '"') return -1;
+    p++;
+    size_t i = 0;
+    while (*p && *p != '"' && i < outsz - 1) out[i++] = *p++;
+    out[i] = 0;
+    return 0;
+}
+
+static int is_active_system(const char *block) {
+    char estado[16] = {0};
+    if (json_strval(block, "estado", estado, sizeof(estado)) != 0) return 0;
+    return (strcmp(estado, "activo") == 0);
+}
+
+static int parse_glifo_array(const char *block, char out[][64], int max) {
+    const char *p = strstr(block, "\"glifos\"");
+    if (!p) return 0;
+    p = strchr(p, '[');
+    if (!p) return 0;
+    p++;
+    int count = 0;
+    while (*p && *p != ']' && count < max) {
+        while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r' || *p == ',') p++;
+        if (*p == '"') {
+            p++;
+            int i = 0;
+            while (*p && *p != '"' && i < 63) out[count][i++] = *p++;
+            out[count][i] = 0;
+            if (i > 0) count++;
+            if (*p) p++;
+        } else break;
+    }
+    return count;
+}
+
+int glifo_load_systems(void) {
+    const char *root = getenv("BDGB_ROOT");
+    if (!root) root = ".";
+    char path[512];
+    snprintf(path, sizeof(path), "%s/glifos/registry.json", root);
+
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0;
+    fseek(f, 0, SEEK_END);
+    long sz = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *json = (char*)malloc((size_t)sz + 1);
+    if (!json) { fclose(f); return 0; }
+    fread(json, 1, (size_t)sz, f);
+    json[sz] = 0;
+    fclose(f);
+
+    int loaded = 0;
+    char *p = json;
+    while ((p = strstr(p, "\"sistema\"")) && loaded < MAX_GLIFOS) {
+        char *bs = p;
+        while (bs > json && *bs != '{') bs--;
+        if (*bs != '{') { p = p + 1; continue; }
+        char *be = strchr(p, '}');
+        if (!be) break;
+        int blen = (int)(be - bs + 1);
+        char block[4096];
+        if (blen >= 4096) { p = be + 1; continue; }
+        strncpy(block, bs, blen);
+        block[blen] = 0;
+
+        if (!is_active_system(block)) { p = be + 1; continue; }
+
+        char sn[64] = {0};
+        json_strval(block, "sistema", sn, sizeof(sn));
+        if (sn[0] == 0) { p = be + 1; continue; }
+
+        char sg[16][64];
+        int ng = parse_glifo_array(block, sg, 16);
+        for (int gi = 0; gi < ng; gi++) {
+            for (int ri = 0; ri < glifo_count; ri++) {
+                if (strcmp(glifos[ri].id, sg[gi]) == 0) {
+                    strncpy(glifos[ri].sistema, sn, sizeof(glifos[ri].sistema) - 1);
+                    loaded++;
+                    break;
+                }
+            }
+        }
+        p = be + 1;
+    }
+    free(json);
+    return loaded;
+}
+
 int glifo_run(const char *id, const char *args) {
     for (int i = 0; i < glifo_count; i++) {
         if (strcmp(glifos[i].id, id) == 0) {
+            if (glifos[i].sistema[0] == 0) {
+                printf("[GLIFO] Error: '%s' no pertenece a ningun sistema activo\n", id);
+                return GLIFO_ERR;
+            }
             glifos[i].ejecuciones++;
             int r = glifos[i].run(args ? args : "");
             if (r == 0) glifos[i].exitosas++;
@@ -43,12 +148,14 @@ int glifo_run(const char *id, const char *args) {
         }
     }
     printf("[GLIFO] Error: '%s' no encontrado\n", id);
-    return -1;
+    return GLIFO_ERR;
 }
 
 int glifo_list(GlifoDef *out, int max) {
-    int n = (glifo_count < max) ? glifo_count : max;
-    for (int i = 0; i < n; i++) out[i] = glifos[i];
+    int n = 0;
+    for (int i = 0; i < glifo_count && n < max; i++) {
+        if (glifos[i].sistema[0]) out[n++] = glifos[i];
+    }
     return n;
 }
 
@@ -183,8 +290,8 @@ static int save_report(TrendItem *trends, int n) {
     const char *root = getenv("BDGB_ROOT");
     if (!root) root = ".";
     char dir[512], weekly_dir[512];
-    snprintf(dir, sizeof(dir), "%s/glifos/trend-tracker/daily", root);
-    snprintf(weekly_dir, sizeof(weekly_dir), "%s/glifos/trend-tracker/weekly", root);
+    snprintf(dir, sizeof(dir), "%s/glifos/vigilancia-tendencias/glifos/trend-tracker/daily", root);
+    snprintf(weekly_dir, sizeof(weekly_dir), "%s/glifos/vigilancia-tendencias/glifos/trend-tracker/weekly", root);
     ensure_dir(dir);
     ensure_dir(weekly_dir);
 
@@ -236,5 +343,6 @@ int glifo_primo_run(const char *args) {
 int glifo_init(void) {
     glifo_count = 0;
     glifo_register("primo", "Glifo Primo - Trend Tracker", glifo_primo_run);
+    glifo_load_systems();
     return glifo_count;
 }

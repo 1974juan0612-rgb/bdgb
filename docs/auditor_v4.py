@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate complete project audit PDF: auditor.pdf"""
 
-import os, json, subprocess
+import os, json, subprocess, sys
 from datetime import datetime
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
@@ -14,7 +14,10 @@ from reportlab.platypus import (
 )
 from reportlab.lib import colors
 
-BDGB_ROOT = r"C:\Users\famil\Desktop\glifos\bdgb"
+BDGB_ROOT = os.environ.get(
+    "BDGB_ROOT",
+    os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+)
 OUTPUT = os.path.join(BDGB_ROOT, "auditor.pdf")
 
 DARK  = HexColor("#1a1a2e")

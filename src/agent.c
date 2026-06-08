@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifndef MAX_PATH
+#define MAX_PATH 512
+#endif
+
 static char registry_path[512] = {0};
 static char agents_dir[512] = {0};
 
@@ -219,9 +223,15 @@ static int tool_scraper_trends(const char *args, char *out, size_t outsz) {
     const char *root = getenv("BDGB_ROOT");
     if (!root) root = ".";
     char cmd[1024];
+#ifdef _WIN32
     snprintf(cmd, sizeof(cmd),
         "cd \"%s\" && \"%s/venv/Scripts/python\" \"%s/scripts/scraper_trends.py\" %s 2>&1",
         root, root, root, args ? args : "");
+#else
+    snprintf(cmd, sizeof(cmd),
+        "cd \"%s\" && \"%s/venv/bin/python\" \"%s/scripts/scraper_trends.py\" %s 2>&1",
+        root, root, root, args ? args : "");
+#endif
     return run_captured(cmd, out, outsz);
 }
 

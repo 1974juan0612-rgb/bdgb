@@ -6,7 +6,7 @@
 #define MAX_AGENTS      32
 #define MAX_PIPELINE    16
 #define MAX_TOOLS       16
-#define MAX_PATH        256
+#define AGENT_PATH_MAX  512
 
 typedef struct {
     char id[64];
