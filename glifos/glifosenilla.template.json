@@ -7,6 +7,8 @@
   "version": "1.0",
   "creado": "YYYY-MM-DD",
 
+  "_regla": "Ningun glifo funciona fuera de un sistema. Este archivo es la autoridad: lo que no esta declarado aqui no existe.",
+
   "glifos": [
     {
       "id": "glifo-1",

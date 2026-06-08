@@ -77,10 +77,18 @@ Este campo es **personalizable segun la tarea del sistema**. Cada sistema define
 - Fuentes de datos, API keys, keywords, horarios, formatos, rutas, etc.
 - No hay esquema fijo; cada sistema adapta este objeto a su proposito
 
+## Regla fundamental
+
+**Ningun glifo funciona fuera de un sistema.** Aunque se pueda crear por separado (su carpeta y codigo existen), no se ejecuta hasta que se define dentro de un `glifosenilla.json`.
+
+Un glifo sin sistema es codigo muerto.
+
 ## Orden de creacion
 
 1. **Definir el Sistema** — crear carpeta con `glifosenilla.json` (glifos, relaciones, pipeline, datos_sistema)
-2. **Crear los Glifos** — cada uno en `glifos/<id>/` con su `glifo.json`
+2. **Crear los Glifos** — cada uno en `sistema/glifos/<id>/` con su codigo
+
+La autoridad es `glifosenilla.json`. Si un glifo no esta ahi declarado, no existe para el sistema.
 
 ## Tipos de Glifo
 
@@ -92,8 +100,8 @@ Este campo es **personalizable segun la tarea del sistema**. Cada sistema define
 ## Comandos
 
 ```bash
-bdgb --glifo-list
-bdgb --glifo-run primo
+bdgb --glifo-list                    # solo lista glifos dentro de sistemas activos
+bdgb --glifo-run primo               # busca primo en glifosenilla.json del sistema
 python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --daily
 ```
 
@@ -102,4 +110,4 @@ python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --dai
 | Sistema | Glifo Maestro | Glifos | Estado |
 |---------|---------------|--------|--------|
 | `vigilancia-tendencias` | `glifosenilla.json` | `primo`, `trend-tracker` | Activo |
-| `youtube-automator` | (pendiente) | (sin asignar) | Inactivo |
+| `youtube-automator` | (pendiente) | (sin asignar - no funciona) | Inactivo |
