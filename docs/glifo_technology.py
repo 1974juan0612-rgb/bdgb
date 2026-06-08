@@ -127,9 +127,11 @@ hr()
 story.append(Paragraph(
     "Este documento define formalmente la tecnologia <b>Glifo</b> del sistema BDGB "
     "(Binary Dynamics Grid Brain). Un glifo es una unidad computacional atomica que "
-    "transporta datos entre herramientas dentro de un flujo de trabajo (Sistema). "
-    "La tecnologia Glifo es unica porque no ejecuta logica de dominio: solo mueve archivos. "
-    "Las herramientas (scripts, APIs, binarios) son las que producen y consumen los datos.",
+    "manipula informacion usando herramientas como instrumentos para cumplir un flujo "
+    "de trabajo (Sistema). Su logica es de orquestacion: decide que herramienta invocar, "
+    "con que argumentos, en que orden, y como procesar el resultado para la siguiente etapa. "
+    "Las herramientas (scripts, APIs, binarios) ejecutan las operaciones concretas; "
+    "el glifo las orquesta para completar la tarea asignada.",
     s_body))
 story.append(Paragraph(
     "El sistema Glifo se basa en una rejilla binaria 16x16 con dinamica Kaprekar, "
@@ -150,28 +152,30 @@ story.append(Paragraph("2. Que es un Glifo", s_h1))
 hr()
 story.append(Paragraph(
     "Un <b>Glifo</b> es un nodo operativo dentro de un Sistema. "
-    "Su unica responsabilidad es mover datos entre herramientas. "
-    "No crea contenido, no transforma informacion, no ejecuta algoritmos de dominio. "
-    "Toma el archivo de salida de una herramienta y lo entrega como archivo de entrada "
-    "a la siguiente herramienta en el pipeline.",
+    "Su funcion es manipular informacion para cumplir el flujo de trabajo "
+    "que se le encarga. Para lograrlo, invoca herramientas como instrumentos: "
+    "les pasa datos de entrada, recibe resultados, y decide el siguiente paso. "
+    "El glifo no ejecuta la logica de dominio directamente, pero si orquesta "
+    "el flujo completo usando las herramientas adecuadas en cada etapa.",
     s_body))
 
 story.append(Paragraph("<b>Analogia:</b>", s_h3))
 story.append(Paragraph(
-    "Imagina una linea de ensamblaje. Las maquinas (herramientas) hacen trabajo real: "
-    "cortar, soldar, pintar. El transportador (glifo) solo mueve la pieza de una maquina "
-    "a la siguiente. El transportador no corta, no suelda, no pinta. "
-    "Pero sin el, las maquinas no estan conectadas.",
+    "Imagina un chef en una cocina. El chef (glifo) no cultiva vegetales ni "
+    "fabrica ollas: usa herramientas (cuchillos, horno, ingredientes) para "
+    "preparar el plato. Decide que herramienta usar, cuando, y en que orden. "
+    "El plato final es responsabilidad del chef, no de las herramientas.",
     s_hl))
 
 story.append(Paragraph("<b>Naturaleza del Glifo:</b>", s_h3))
 tb([
     ["Propiedad", "Descripcion"],
-    ["Unidad atomica", "Un glifo hace exactamente una cosa: mover datos de A a B"],
-    ["Sin logica de dominio", "No procesa, no analiza, no decide. Solo transporta"],
-    ["Declarativo", "Su comportamiento se define en JSON, no en codigo"],
-    ["Portatil", "Lee/escribe/copia archivos: funciona en cualquier SO"],
-    ["Componible", "Varios glifos forman un pipeline dentro de un Sistema"],
+    ["Orquestador", "Invoca herramientas, pasa datos, recibe resultados, decide el siguiente paso"],
+    ["Manipula informacion", "Toma datos de entrada, los transforma usando herramientas, produce resultados"],
+    ["Orientado al flujo", "Su proposito es completar el workflow completo, no solo transportar"],
+    ["Declarativo", "Su pipeline se define en JSON (glifosenilla.json)"],
+    ["Portatil", "Usa herramientas del SO: funciona en Windows, Linux, macOS, Android"],
+    ["Componible", "Varios glifos forman un pipeline; un sistema puede ser glifo de otro sistema mayor"],
     ["Estado medible", "Cada glifo cuenta ejecuciones, exitos y fallos"],
 ], col_widths=[3.5*cm, 11.3*cm])
 
@@ -491,12 +495,12 @@ story.append(Paragraph(
 
 story.append(Paragraph("<b>Portabilidad:</b>", s_h3))
 story.append(Paragraph(
-    "Los glifos solo mueven archivos (copiar, renombrar, leer, escribir). "
-    "Esta logica funciona identico en Windows, Linux, macOS, Android, iOS, "
-    "tablets y cualquier sistema con un sistema de archivos. "
-    "El nucleo C compila con C99 estandar en cualquier plataforma. "
-    "Las herramientas externas pueden requerir runtimes especificos "
-    "(Python, etc.), pero el glifo que las orquesta no.",
+    "La logica de orquestacion del glifo (decidir que herramienta invocar, "
+    "con que argumentos, en que orden) es inherentemente portable: funciona "
+    "identico en Windows, Linux, macOS, Android, iOS, tablets y cualquier "
+    "sistema con un sistema de archivos. El nucleo C compila con C99 estandar "
+    "en cualquier plataforma. Las herramientas externas pueden requerir "
+    "runtimes especificos (Python, etc.), pero el glifo que las orquesta no.",
     s_body))
 
 story.append(Paragraph("<b>Rendimiento:</b>", s_h3))
@@ -534,10 +538,11 @@ story.append(Paragraph(
     "internet y manejan autenticacion (API keys, tokens).",
     s_body))
 story.append(Paragraph(
-    "El glifo que orquesta herramientas online solo pasa archivos entre ellas. "
-    "La herramienta online (ej: trend_tracker.py) hace la llamada HTTP real "
-    "y guarda el resultado en un archivo. El glifo toma ese archivo y lo "
-    "entrega a la siguiente herramienta del pipeline.",
+    "El glifo orquesta las herramientas online: invoca la herramienta adecuada "
+    "(ej: trend_tracker.py), recibe el resultado, y decide si pasarlo a la siguiente "
+    "etapa del pipeline, combinarlo con otros datos, o reprocesarlo. "
+    "El glifo no hace la llamada HTTP directamente, pero es quien decide "
+    "que llamada hacer y cuando.",
     s_body))
 
 story.append(Paragraph("9.2 Rama Local", s_h2))
@@ -548,10 +553,10 @@ story.append(Paragraph(
     "localmente.",
     s_body))
 story.append(Paragraph(
-    "Un sistema local tipico: una herramienta escanea archivos locales y produce "
-    "un JSON, el glifo mueve ese JSON a una herramienta de analisis, "
-    "que produce un reporte, que otro glifo entrega a una herramienta de "
-    "visualizacion. Todo offline.",
+    "Un sistema local tipico: el glifo invoca un escaner local que produce un JSON, "
+    "toma ese JSON y lo pasa a una herramienta de analisis, recibe el reporte, "
+    "y lo entrega a una herramienta de visualizacion. El glifo decide el flujo "
+    "completo. Todo offline.",
     s_body))
 
 story.append(Paragraph("9.3 Rama Hibrida", s_h2))
@@ -562,9 +567,10 @@ story.append(Paragraph(
     "se sube a una API cloud (online).",
     s_body))
 story.append(Paragraph(
-    "El glifo abstrae esta complejidad: para el, todo son archivos que entran "
-    "y salen de herramientas. No sabe ni le importa si la herramienta "
-    "hizo una llamada HTTP o calculo local. Solo mueve datos.",
+    "El glifo abstrae esta complejidad: para el, cada herramienta es un modulo "
+    "con entradas y salidas. No le importa si la herramienta hizo una llamada HTTP "
+    "o un calculo local. Lo que importa es que el flujo completo se complete "
+    "correctamente.",
     s_body))
 
 # ══════════════════════════════════════════════════════════════════════
@@ -574,10 +580,10 @@ story.append(Paragraph("10. Conclusion", s_h1))
 hr()
 story.append(Paragraph(
     "La tecnologia Glifo de BDGB es un enfoque unico para la automatizacion "
-    "de flujos de trabajo. Su innovacion principal es la separacion radical "
-    "entre el transporte de datos (el glifo) y el procesamiento de datos "
-    "(la herramienta). Esto hace que los glifos sean inherentemente portatiles, "
-    "componibles y faciles de orquestar.",
+    "de flujos de trabajo. Su innovacion principal es la orquestacion declarativa: "
+    "el glifo manipula informacion usando herramientas como instrumentos, "
+    "y su logica se define en JSON. Esto hace que los glifos sean portatiles, "
+    "componibles y faciles de encadenar en pipelines complejos.",
     s_body))
 story.append(Paragraph(
     "Los fundamentos matematicos (rejilla binaria, dinamica Kaprekar, "

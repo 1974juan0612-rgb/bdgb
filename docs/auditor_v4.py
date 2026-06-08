@@ -239,12 +239,12 @@ story.append(Paragraph("3. Sistema de Glifos", s_h1))
 hr()
 story.append(Paragraph(
     "El sistema de glifos es la capa de automatizacion del proyecto. Un glifo es un nodo "
-    "operativo que transporta datos entre herramientas. No ejecuta logica de dominio: "
-    "solo mueve archivos. Las herramientas (scripts, APIs, binarios) son las que producen "
-    "y consumen los datos. Los glifos se agrupan en Sistemas, que son flujos de trabajo "
-    "con un proposito definido. Cada sistema tiene un glifo maestro obligatorio "
-    "(glifosenilla.json) que define el pipeline completo, las relaciones entre "
-    "glifos y los datos extra del sistema.", s_body))
+    "operativo que manipula informacion usando herramientas como instrumentos. Su logica "
+    "es de orquestacion: invoca herramientas, pasa datos, recibe resultados, y decide "
+    "el siguiente paso para completar el flujo de trabajo. Los glifos se agrupan en "
+    "Sistemas, que son flujos de trabajo con un proposito definido. Cada sistema tiene "
+    "un glifo maestro obligatorio (glifosenilla.json) que define el pipeline completo, "
+    "las relaciones entre glifos y los datos extra del sistema.", s_body))
 
 story.append(Paragraph("<b>Arquitectura:</b>", s_body))
 story.append(Paragraph(

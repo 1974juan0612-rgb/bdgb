@@ -23,21 +23,24 @@ Cada sistema pertenece a una de tres ramas segun el origen de sus herramientas:
 
 ## Que hace un glifo
 
-**Los glifos solo mueven archivos (datos).** No crean contenido ni ejecutan logica de dominio. Toman el output (archivo) de una herramienta y lo pasan como input a la siguiente.
+Un **Glifo manipula informacion usando herramientas como instrumentos** para cumplir el flujo de trabajo que se le encarga. Su logica es de orquestacion: decide que herramienta invocar, con que argumentos, en que orden, y como procesar el resultado para la siguiente etapa.
 
-Las **herramientas** son las que producen y consumen los datos. Un glifo es el transporte entre ellas:
+Las **herramientas** ejecutan las operaciones concretas; el glifo las orquesta para completar la tarea:
 
 ```
-Herramienta A (produce data.txt)
+Glifo recibe: "vigilar tendencias hoy"
        ↓
-  [GLIFO: mueve data.txt → Herramienta B]
+  [GLIFO: invoca primo (RSS) → recibe reporte]
        ↓
-Herramienta B (consume data.txt, produce resultado.json)
+  [GLIFO: pasa reporte a trend-tracker → recibe JSON+PDF]
        ↓
-  [GLIFO: mueve resultado.json → display/output]
+  [GLIFO: inyecta resultados en BDGB]
+Glifo entrega: "tendencias del dia inyectadas"
 ```
 
-Esto hace que los glifos sean inherentemente **cross-platform**: leer, escribir y copiar archivos funciona igual en Windows, Linux, macOS, Android y cualquier dispositivo con sistema de archivos.
+El glifo no es un transportador pasivo: **manipula activamente el flujo de informacion**, usando cada herramienta como un instrumento para obtener el resultado que necesita. Es el chef, no la cuchara.
+
+Esto hace que los glifos sean inherentemente **cross-platform**: la logica de orquestacion es portable, y las herramientas se adaptan al SO.
 
 ## Independencia y composicion
 
