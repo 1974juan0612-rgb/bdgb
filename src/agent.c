@@ -6,6 +6,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
+#include <ctype.h>
+
+#ifdef _WIN32
+#include <direct.h>
+#else
+#include <sys/stat.h>
+#endif
 
 #ifndef MAX_PATH
 #define MAX_PATH 512
@@ -133,12 +140,37 @@ int agent_list(AgentDef *out, int max_out) {
 }
 
 int agent_register(const char *id, const char *nombre, const char *schedule) {
-    FILE *f = fopen(registry_path, "rb");
-    if (f) fclose(f);
+    if (!id) return -1;
     char dir[MAX_PATH];
+    snprintf(dir, sizeof(dir), "%s/%s", agents_dir, id);
+#ifdef _WIN32
+    _mkdir(dir);
+#else
+    mkdir(dir, 0755);
+#endif
     snprintf(dir, sizeof(dir), "%s/%s/config.json", agents_dir, id);
-    f = fopen(dir, "rb");
-    if (f) { fclose(f); return -1; }
+    FILE *f = fopen(dir, "rb");
+    if (f) { fclose(f); return -1; } /* already exists */
+
+    f = fopen(dir, "w");
+    if (!f) return -1;
+    fprintf(f, "{\n");
+    fprintf(f, "  \"id\": \"%s\",\n", id);
+    fprintf(f, "  \"nombre\": \"%s\",\n", nombre ? nombre : id);
+    fprintf(f, "  \"estado\": \"activo\",\n");
+    if (schedule) fprintf(f, "  \"schedule\": \"%s\",\n", schedule);
+    fprintf(f, "  \"pipeline\": {}\n");
+    fprintf(f, "}\n");
+    fclose(f);
+
+    if (agent_count < MAX_AGENTS) {
+        AgentDef *a = &agents[agent_count++];
+        memset(a, 0, sizeof(AgentDef));
+        strncpy(a->id, id, sizeof(a->id) - 1);
+        strncpy(a->nombre, nombre ? nombre : id, sizeof(a->nombre) - 1);
+        strncpy(a->estado, "activo", sizeof(a->estado) - 1);
+        a->activo = 1;
+    }
     return 0;
 }
 
@@ -258,8 +290,21 @@ static int tool_file_read(const char *args, char *out, size_t outsz) {
     return 0;
 }
 
-/* Tool: system — controlled external command */
+/* Tool: system — controlled external command (args validated, no shell metacharacters) */
 static int tool_system(const char *args, char *out, size_t outsz) {
+    if (!args) {
+        snprintf(out, outsz, "{\"error\":\"no args\"}");
+        return -1;
+    }
+    for (const char *p = args; *p; p++) {
+        if (!isalnum((unsigned char)*p) && *p != ' ' && *p != '-' &&
+            *p != '_' && *p != '.' && *p != '/' && *p != '=' &&
+            *p != ':' && *p != ',' && *p != '%' && *p != '@' &&
+            *p != '~' && *p != '+') {
+            snprintf(out, outsz, "{\"error\":\"invalid chars in args\"}");
+            return -1;
+        }
+    }
     char cmd[1024];
     snprintf(cmd, sizeof(cmd), "%s 2>&1", args);
     return run_captured(cmd, out, outsz);

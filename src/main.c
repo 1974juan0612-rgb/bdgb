@@ -31,7 +31,7 @@ static void clear_data(void) {
                            "semantics.dat", "concepts.idx",
                            "concept_edges.dat", "concept_edges.idx",
                            "usage_nodes.dat", "usage_concepts.dat",
-                           "usage_edges.dat", NULL};
+                           "usage_edges.dat", "nlp_terms.dat", NULL};
     for (int i = 0; files[i]; i++) {
         snprintf(path, sizeof(path), "%s/%s", data_path, files[i]);
         remove(path);

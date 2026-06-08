@@ -33,7 +33,7 @@ static void cleanup(void) {
                            "semantics.dat", "concepts.idx",
                            "concept_edges.dat", "concept_edges.idx",
                            "usage_nodes.dat", "usage_concepts.dat",
-                           "usage_edges.dat", NULL};
+                           "usage_edges.dat", "nlp_terms.dat", NULL};
     char path[512];
     for (int i = 0; files[i]; i++) {
         snprintf(path, sizeof(path), "%s/%s", TEST_PATH, files[i]);
@@ -298,9 +298,10 @@ static void test_crypt_encrypt_decrypt(void) {
 
 static void test_crypt_file_roundtrip(void) {
     TEST("crypt file round-trip");
-    const char *orig = "bdgb_crypt_test_orig.txt";
-    const char *enc  = "bdgb_crypt_test_enc.bdgb";
-    const char *dec  = "bdgb_crypt_test_dec.txt";
+    char orig[512], enc[512], dec[512];
+    snprintf(orig, sizeof(orig), "%s/bdgb_crypt_test_orig.txt", TEST_PATH);
+    snprintf(enc, sizeof(enc), "%s/bdgb_crypt_test_enc.bdgb", TEST_PATH);
+    snprintf(dec, sizeof(dec), "%s/bdgb_crypt_test_dec.txt", TEST_PATH);
 
     FILE *f = fopen(orig, "wb");
     ASSERT(f != NULL, "create orig file");
@@ -408,11 +409,9 @@ int main(void) {
     resolve_test_path();
 #ifdef BDGB_SOURCE_DIR
     /* Set BDGB_ROOT so glifo_load_systems() finds glifos/registry.json */
-    {
-        char ev[512];
-        snprintf(ev, sizeof(ev), "BDGB_ROOT=%s", BDGB_SOURCE_DIR);
-        putenv(ev);
-    }
+    static char bdgb_root_env[512];
+    snprintf(bdgb_root_env, sizeof(bdgb_root_env), "BDGB_ROOT=%s", BDGB_SOURCE_DIR);
+    putenv(bdgb_root_env);
 #endif
     cleanup();
     bdgb_init(TEST_PATH);

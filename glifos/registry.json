@@ -40,7 +40,7 @@
       "creado": "2026-06-08",
       "sistema": "vigilancia-tendencias",
       "ruta": "vigilancia-tendencias/glifos/trend-tracker/",
-      "entry": "python3 viglancia-tendencias/glifos/trend-tracker/trend_tracker.py",
+      "entry": "python3 vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
       "schedule": {
         "tipo": "diario",
         "hora": "08:05"

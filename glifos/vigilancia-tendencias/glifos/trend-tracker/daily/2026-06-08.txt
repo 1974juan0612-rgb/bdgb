@@ -5,13 +5,13 @@
 
 Tendencias: 10
 
-   1. inteligencia artificial pixel art         83  [tecnologia]
+   1. inteligencia artificial pixel art         92  [tecnologia]
    2. video juegos retro 2026                   78  [entretenimiento]
-   3. musica lo fi para estudiar                69  [musica]
-   4. tutorial blender 3d                       67  [educacion]
-   5. cocina vegana rapida                      57  [cocina]
-   6. diseno de personajes pixel                77  [arte]
-   7. animacion 2d principiantes                70  [educacion]
-   8. chip tunes musica                         67  [musica]
-   9. game development sin codigo               76  [tecnologia]
-  10. ia generativa arte                        90  [tecnologia]
+   3. musica lo fi para estudiar                72  [musica]
+   4. tutorial blender 3d                       70  [educacion]
+   5. cocina vegana rapida                      56  [cocina]
+   6. diseno de personajes pixel                86  [arte]
+   7. animacion 2d principiantes                74  [educacion]
+   8. chip tunes musica                         64  [musica]
+   9. game development sin codigo               74  [tecnologia]
+  10. ia generativa arte                        93  [tecnologia]
