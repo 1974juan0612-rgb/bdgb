@@ -116,10 +116,18 @@ Un glifo sin sistema es codigo muerto.
 
 La autoridad es `glifosenilla.json`. Si un glifo no esta ahi declarado, no existe para el sistema.
 
-## Tipos de Glifo
+## Clasificacion por naturaleza
 
-| Tipo | Descripcion |
-|------|-------------|
+| Clase | Que es | Ejemplo |
+|-------|--------|---------|
+| **Primo** | Codigo original del que se crean todos los demas glifos. Es el molde, la masa madre | `src/glifo.c`, `include/glifo.h` |
+| **Semilla** | `glifosenilla.json`. Eje que define y crea un sistema. Sin semilla no hay sistema | `vigilancia-tendencias/glifosenilla.json` |
+| **Comun** | Glifos operativos que ejecutan las tareas dentro de un sistema | `primo` (como glifo comun), `trend-tracker` |
+
+### Subtipos de glifo comun
+
+| Subtipo | Descripcion |
+|---------|-------------|
 | **Nativo** | Compilado en el binario BDGB (`src/glifo.c`). Cero dependencias |
 | **Externo** | Script (Python, etc.) dentro de la carpeta del sistema |
 

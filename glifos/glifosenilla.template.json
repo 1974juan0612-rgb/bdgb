@@ -8,8 +8,8 @@
   "creado": "YYYY-MM-DD",
 
   "_regla": "Ningun glifo funciona fuera de un sistema. Este archivo es la autoridad: lo que no esta declarado aqui no existe.",
-
-  "_tipos_glifo": "nativo=compilado en C, externo=script, sistema=otro sistema completo integrado",
+  "_clasificacion": "Primo=codigo original (src/glifo.c). Semilla=este archivo (glifosenilla.json). Comun=glifos operativos declarados abajo.",
+  "_tipos_comun": "nativo=compilado en C, externo=script, sistema=otro sistema completo integrado",
   "glifos": [
     {
       "id": "glifo-1",

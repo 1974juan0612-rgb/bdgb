@@ -6,6 +6,7 @@
   "estado": "activo",
   "version": "1.0",
   "_regla": "Ningun glifo funciona fuera de un sistema. Este archivo es la autoridad: solo los glifos declarados aqui existen y pueden ejecutarse.",
+  "_clasificacion": "Primo=codigo original (src/glifo.c). Semilla=este archivo (glifosenilla.json). Comun=glifos operativos abajo.",
   "creado": "2026-06-08",
 
   "glifos": [
