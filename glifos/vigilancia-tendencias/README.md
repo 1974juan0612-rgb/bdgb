@@ -2,24 +2,21 @@
 
 Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB.
 
+## Glifo Maestro
+
+`glifosenilla.json` — define pipeline, relaciones y configuracion del sistema.
+
 ## Glifos
 
-| Glifo | Tipo | Proposito |
-|-------|------|-----------|
-| `primo` | Nativo (C) | Fetch basico de tendencias, reporte .txt, inyeccion rapida |
-| `trend-tracker` | Externo (Python) | Reportes JSON/PDF, resumen semanal, exportacion |
+| Glifo | Tipo | Produce |
+|-------|------|---------|
+| `primo` | Nativo (C) | reporte .txt, conceptos BDGB, terminos NLP |
+| `trend-tracker` | Externo (Python) | reporte JSON, PDF, resumen semanal |
 
-## Flujo
+## Pipeline
 
 ```
-primo (08:00) ──> reporte diario .txt
-                        │
-trend-tracker (08:05) ──> reporte JSON + PDF
-                        │
+08:00  primo ──> .txt + conceptos BDGB
+08:05  trend-tracker ──> .json + .pdf
                         └──> cada 7 dias -> resumen semanal
 ```
-
-## Archivos
-
-- `workflow.json` — define el pipeline y dependencias entre glifos
-- `glifos/<id>/glifo.json` — configuracion individual de cada glifo

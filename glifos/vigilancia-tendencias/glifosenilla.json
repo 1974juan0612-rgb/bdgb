@@ -1,0 +1,62 @@
+{
+  "id": "vigilancia-tendencias",
+  "nombre": "Vigilancia de Tendencias",
+  "tipo": "sistema",
+  "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
+  "estado": "activo",
+  "version": "1.0",
+  "creado": "2026-06-08",
+  "schedule": {
+    "tipo": "diario",
+    "hora": "08:00",
+    "timezone": "America/Mexico_City"
+  },
+  "glifos": ["primo", "trend-tracker"],
+  "pipeline": [
+    {
+      "orden": 1,
+      "glifo": "primo",
+      "accion": "fetch + report + inject",
+      "args": [],
+      "dependencias": [],
+      "desc": "Obtener tendencias via RSS, guardar reporte .txt, inyectar conceptos en BDGB"
+    },
+    {
+      "orden": 2,
+      "glifo": "trend-tracker",
+      "accion": "--daily",
+      "args": ["--daily"],
+      "dependencias": ["primo"],
+      "desc": "Reporte JSON + PDF con pytrends, inyeccion adicional en BDGB"
+    }
+  ],
+  "post_pipeline": [
+    {
+      "condicion": "cada 7 dias",
+      "glifo": "trend-tracker",
+      "accion": "--weekly",
+      "args": ["--weekly"],
+      "desc": "Acumular 7 reportes y generar resumen semanal"
+    }
+  ],
+  "relaciones": {
+    "primo": {
+      "tipo": "nativo",
+      "produce": ["reporte_diario_txt", "conceptos_bdgb", "terminos_nlp"],
+      "consume": []
+    },
+    "trend-tracker": {
+      "tipo": "externo",
+      "produce": ["reporte_json", "reporte_pdf", "resumen_semanal"],
+      "consume": []
+    }
+  },
+  "metricas": {
+    "ejecuciones": 0,
+    "exitosas": 0,
+    "fallidas": 0,
+    "ultima_ejecucion": null,
+    "dias_consecutivos": 0
+  },
+  "notas": "primo corre 5 min antes que trend-tracker para que el reporte .txt este listo"
+}
