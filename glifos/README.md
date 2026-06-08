@@ -11,6 +11,32 @@ Todo sistema tiene un **glifo maestro** (`glifosenilla.json`) en su raiz que def
 - El orden de ejecucion (pipeline)
 - Datos extra propios de la tarea del sistema
 
+## Independencia y composicion
+
+Cada sistema funciona **independiente** de otros sistemas. Pero un sistema completo puede integrarse como un **glifo** dentro de un sistema superior:
+
+```
+SISTEMA PADRE (produccion-automatica)
+  ├── glifo: scraper (nativo)
+  ├── glifo: editor (externo)
+  └── SISTEMA: vigilancia-tendencias ← integrado como glifo
+        ├── glifo: primo
+        └── glifo: trend-tracker
+```
+
+Esto se define en `glifos[]` con `"tipo": "sistema"`:
+
+```json
+{
+  "id": "vigilancia-tendencias",
+  "tipo": "sistema",
+  "ref": "glifos/vigilancia-tendencias/glifosenilla.json",
+  "descripcion": "Sistema completo integrado como glifo"
+}
+```
+
+## Estructura de directorios
+
 ```
 glifos/
   README.md

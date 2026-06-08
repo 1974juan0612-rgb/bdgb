@@ -9,6 +9,7 @@
 
   "_regla": "Ningun glifo funciona fuera de un sistema. Este archivo es la autoridad: lo que no esta declarado aqui no existe.",
 
+  "_tipos_glifo": "nativo=compilado en C, externo=script, sistema=otro sistema completo integrado",
   "glifos": [
     {
       "id": "glifo-1",
@@ -24,6 +25,13 @@
       "entry": "python3 glifos/<sistema>/glifos/glifo-2/script.py",
       "lenguaje": "python3",
       "descripcion": "Que hace este glifo"
+    },
+    {
+      "id": "subsistema-ejemplo",
+      "nombre": "Sistema Externo Integrado",
+      "tipo": "sistema",
+      "ref": "glifos/otro-sistema/glifosenilla.json",
+      "descripcion": "Sistema completo que funciona como glifo dentro de este sistema"
     }
   ],
 
