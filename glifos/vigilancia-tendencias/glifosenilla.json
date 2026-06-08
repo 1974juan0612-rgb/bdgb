@@ -6,20 +6,41 @@
   "estado": "activo",
   "version": "1.0",
   "creado": "2026-06-08",
-  "schedule": {
-    "tipo": "diario",
-    "hora": "08:00",
-    "timezone": "America/Mexico_City"
-  },
-  "glifos": ["primo", "trend-tracker"],
+
+  "glifos": [
+    {
+      "id": "primo",
+      "nombre": "Glifo Primo",
+      "tipo": "nativo",
+      "entry": "bdgb --glifo-run primo",
+      "descripcion": "Fetch via RSS, reporte .txt, inyeccion en BDGB"
+    },
+    {
+      "id": "trend-tracker",
+      "nombre": "Trend Tracker Diario",
+      "tipo": "externo",
+      "entry": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
+      "lenguaje": "python3",
+      "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal"
+    }
+  ],
+
+  "relaciones": [
+    {
+      "de": "primo",
+      "a": "trend-tracker",
+      "tipo": "ejecucion",
+      "flujo": "primo debe ejecutarse antes que trend-tracker, su reporte .txt es insumo opcional"
+    }
+  ],
+
   "pipeline": [
     {
       "orden": 1,
       "glifo": "primo",
       "accion": "fetch + report + inject",
       "args": [],
-      "dependencias": [],
-      "desc": "Obtener tendencias via RSS, guardar reporte .txt, inyectar conceptos en BDGB"
+      "descripcion": "Obtener tendencias via RSS, guardar reporte .txt, inyectar conceptos en BDGB"
     },
     {
       "orden": 2,
@@ -27,36 +48,34 @@
       "accion": "--daily",
       "args": ["--daily"],
       "dependencias": ["primo"],
-      "desc": "Reporte JSON + PDF con pytrends, inyeccion adicional en BDGB"
-    }
-  ],
-  "post_pipeline": [
+      "descripcion": "Reporte JSON + PDF con pytrends, inyeccion adicional en BDGB"
+    },
     {
-      "condicion": "cada 7 dias",
+      "orden": 3,
       "glifo": "trend-tracker",
       "accion": "--weekly",
       "args": ["--weekly"],
-      "desc": "Acumular 7 reportes y generar resumen semanal"
+      "condicion": "cada 7 dias",
+      "dependencias": ["primo"],
+      "descripcion": "Acumular 7 reportes diarios y generar resumen semanal"
     }
   ],
-  "relaciones": {
-    "primo": {
-      "tipo": "nativo",
-      "produce": ["reporte_diario_txt", "conceptos_bdgb", "terminos_nlp"],
-      "consume": []
-    },
-    "trend-tracker": {
-      "tipo": "externo",
-      "produce": ["reporte_json", "reporte_pdf", "resumen_semanal"],
-      "consume": []
-    }
+
+  "datos_sistema": {
+    "fuentes": ["google-trends-rss", "pytrends-api"],
+    "palabras_clave": ["inteligencia artificial", "pixel art", "video juegos", "musica", "ia"],
+    "horario_ejecucion": "08:00 Mexico City",
+    "formatos_reporte": [".txt", ".json", ".pdf"],
+    "max_tendencias_por_dia": 10,
+    "dias_para_resumen_semanal": 7,
+    "inyectar_en_bdgb": true
   },
+
   "metricas": {
     "ejecuciones": 0,
     "exitosas": 0,
     "fallidas": 0,
     "ultima_ejecucion": null,
     "dias_consecutivos": 0
-  },
-  "notas": "primo corre 5 min antes que trend-tracker para que el reporte .txt este listo"
+  }
 }

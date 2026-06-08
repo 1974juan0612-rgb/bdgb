@@ -1,0 +1,66 @@
+{
+  "id": "nombre-del-sistema",
+  "nombre": "Nombre Humano del Sistema",
+  "tipo": "sistema",
+  "descripcion": "Describir que hace este flujo de trabajo",
+  "estado": "activo",
+  "version": "1.0",
+  "creado": "YYYY-MM-DD",
+
+  "glifos": [
+    {
+      "id": "glifo-1",
+      "nombre": "Nombre del Glifo",
+      "tipo": "nativo",
+      "entry": "bdgb --glifo-run glifo-1",
+      "descripcion": "Que hace este glifo"
+    },
+    {
+      "id": "glifo-2",
+      "nombre": "Nombre del Glifo 2",
+      "tipo": "externo",
+      "entry": "python3 glifos/<sistema>/glifos/glifo-2/script.py",
+      "lenguaje": "python3",
+      "descripcion": "Que hace este glifo"
+    }
+  ],
+
+  "relaciones": [
+    {
+      "de": "glifo-1",
+      "a": "glifo-2",
+      "tipo": "ejecucion",
+      "flujo": "glifo-1 debe ejecutarse antes que glifo-2, su salida es entrada para glifo-2"
+    }
+  ],
+
+  "pipeline": [
+    {
+      "orden": 1,
+      "glifo": "glifo-1",
+      "accion": "accion por defecto",
+      "args": [],
+      "descripcion": "Que hace en este paso"
+    },
+    {
+      "orden": 2,
+      "glifo": "glifo-2",
+      "accion": "--run",
+      "args": ["--run"],
+      "dependencias": ["glifo-1"],
+      "descripcion": "Que hace en este paso"
+    }
+  ],
+
+  "datos_sistema": {
+    "nota": "Este objeto es COMPLETAMENTE PERSONALIZABLE segun la tarea del sistema",
+    "ejemplo_clave": "valor"
+  },
+
+  "metricas": {
+    "ejecuciones": 0,
+    "exitosas": 0,
+    "fallidas": 0,
+    "ultima_ejecucion": null
+  }
+}
