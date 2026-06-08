@@ -1,16 +1,13 @@
 #include "glifo.h"
 #include "bdgb.h"
 #include "nlp.h"
+#include "util.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
-#ifdef _WIN32
-#include <direct.h>
-#else
-#include <sys/stat.h>
-#endif
+#define TRENDS_RSS_URL "https://trends.google.com/trending/rss?geo=US"
 
 /* ============================================================
  *   REGISTRY
@@ -197,35 +194,7 @@ static int mock_scores[MOCK_COUNT] = {
     88, 79, 73, 67, 61, 82, 71, 64, 76, 91
 };
 
-/* Ejecuta comando y captura stdout */
-static int run_captured(const char *cmd, char *out, size_t outsz) {
-#ifdef _WIN32
-    FILE *fp = _popen(cmd, "r");
-#else
-    FILE *fp = popen(cmd, "r");
-#endif
-    if (!fp) return -1;
-    size_t pos = 0;
-    while (pos < outsz - 1) {
-        int c = fgetc(fp);
-        if (c == EOF) break;
-        out[pos++] = (char)c;
-    }
-    out[pos] = 0;
-#ifdef _WIN32
-    return _pclose(fp);
-#else
-    return pclose(fp);
-#endif
-}
-
-static void ensure_dir(const char *path) {
-#ifdef _WIN32
-    _mkdir(path);
-#else
-    mkdir(path, 0755);
-#endif
-}
+/* run_captured y ensure_dir estan en util.c */
 
 typedef struct {
     char topic[64];
@@ -238,7 +207,7 @@ static int fetch_trends(TrendItem *out, int max) {
     char buf[8192] = {0};
     char cmd[512];
     snprintf(cmd, sizeof(cmd),
-        "curl -s --max-time 5 'https://trends.google.com/trending/rss?geo=US' 2>/dev/null || echo FALLBACK");
+        "curl -s --max-time 5 '" TRENDS_RSS_URL "' 2>/dev/null || echo FALLBACK");
     run_captured(cmd, buf, sizeof(buf));
 
     int count = 0;

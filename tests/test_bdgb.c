@@ -6,6 +6,7 @@
 #include "learning.h"
 #include "nlp.h"
 #include "glifo.h"
+#include "agent.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -29,9 +30,9 @@ static void resolve_test_path(void) {
 }
 
 static void cleanup(void) {
-    const char *files[] = {"nodes.dat", "edges_geom.dat", "edges_dyn.dat",
-                           "semantics.dat", "concepts.idx",
-                           "concept_edges.dat", "concept_edges.idx",
+    const char *files[] = {"nodes.dat",
+                           "semantics.dat",
+                           "concept_edges.dat",
                            "usage_nodes.dat", "usage_concepts.dat",
                            "usage_edges.dat", "nlp_terms.dat", NULL};
     char path[512];
@@ -273,6 +274,105 @@ static void test_crypt_keystream_differs(void) {
     PASS();
 }
 
+static void test_crypt_empty_buffer(void) {
+    TEST("crypt empty buffer");
+    uint8_t buf[1] = {0};
+    BDGBCryptCtx ctx;
+    uint8_t iv[8] = {0};
+    bdgb_crypt_init(&ctx, "key", iv);
+    bdgb_crypt_buffer(&ctx, buf, 0);
+    PASS();
+}
+
+static void test_crypt_odd_sizes(void) {
+    TEST("crypt odd buffer sizes");
+    uint8_t buf1[1] = {'A'};
+    uint8_t buf3[3] = {'A','B','C'};
+    uint8_t buf7[7] = {'A','B','C','D','E','F','G'};
+    uint8_t orig1[1], orig3[3], orig7[7];
+    memcpy(orig1, buf1, 1);
+    memcpy(orig3, buf3, 3);
+    memcpy(orig7, buf7, 7);
+    uint8_t iv[8] = {1,2,3,4,5,6,7,8};
+    BDGBCryptCtx ctx;
+    bdgb_crypt_init(&ctx, "test", iv);
+    bdgb_crypt_buffer(&ctx, buf1, 1);
+    bdgb_crypt_init(&ctx, "test", iv);
+    bdgb_crypt_buffer(&ctx, buf3, 3);
+    bdgb_crypt_init(&ctx, "test", iv);
+    bdgb_crypt_buffer(&ctx, buf7, 7);
+    ASSERT(memcmp(buf1, orig1, 1) != 0, "single byte encrypted");
+    bdgb_crypt_init(&ctx, "test", iv);
+    bdgb_crypt_buffer(&ctx, buf1, 1);
+    ASSERT(memcmp(buf1, orig1, 1) == 0, "single byte roundtrip");
+    bdgb_crypt_init(&ctx, "test", iv);
+    bdgb_crypt_buffer(&ctx, buf3, 3);
+    ASSERT(memcmp(buf3, orig3, 3) == 0, "3 byte roundtrip");
+    bdgb_crypt_init(&ctx, "test", iv);
+    bdgb_crypt_buffer(&ctx, buf7, 7);
+    ASSERT(memcmp(buf7, orig7, 7) == 0, "7 byte roundtrip");
+    PASS();
+}
+
+static void test_crypt_large_buffer(void) {
+    TEST("crypt large buffer");
+    int sz = 1024;
+    uint8_t *buf = (uint8_t*)malloc(sz);
+    for (int i = 0; i < sz; i++) buf[i] = (uint8_t)(i & 0xFF);
+    uint8_t *orig = (uint8_t*)malloc(sz);
+    memcpy(orig, buf, sz);
+    uint8_t iv[8] = {0x11,0x22,0x33,0x44,0x55,0x66,0x77,0x88};
+    BDGBCryptCtx ctx;
+    bdgb_crypt_init(&ctx, "large-test-key", iv);
+    bdgb_crypt_buffer(&ctx, buf, sz);
+    ASSERT(memcmp(buf, orig, sz) != 0, "large buffer encrypted");
+    bdgb_crypt_init(&ctx, "large-test-key", iv);
+    bdgb_crypt_buffer(&ctx, buf, sz);
+    ASSERT(memcmp(buf, orig, sz) == 0, "large buffer roundtrip");
+    free(buf); free(orig);
+    PASS();
+}
+
+static void test_agent_init_and_list(void) {
+    TEST("agent init and list");
+    agent_init();
+    AgentDef alist[MAX_AGENTS];
+    int n = agent_list(alist, MAX_AGENTS);
+    ASSERT(n >= 0, "list should not fail");
+    for (int i = 0; i < n; i++) {
+        ASSERT(alist[i].id[0] != 0, "agent id should be non-empty");
+    }
+    PASS();
+}
+
+static void test_agent_get_known(void) {
+    TEST("agent get known agent");
+    agent_init();
+    AgentDef a;
+    int r = agent_get("primo", &a);
+    ASSERT(r == 0, "should find primo");
+    ASSERT(strcmp(a.id, "primo") == 0, "id matches");
+    PASS();
+}
+
+static void test_agent_get_unknown(void) {
+    TEST("agent get unknown returns -1");
+    agent_init();
+    AgentDef a;
+    int r = agent_get("no-existe", &a);
+    ASSERT(r == -1, "should not find unknown agent");
+    PASS();
+}
+
+static void test_rand_seeded(void) {
+    TEST("rand produces different values");
+    srand(42);
+    int a = rand();
+    int b = rand();
+    ASSERT(a != b, "consecutive rand values should differ");
+    PASS();
+}
+
 static void test_crypt_encrypt_decrypt(void) {
     TEST("crypt round-trip encrypt/decrypt");
     uint8_t plain[] = "HELLO BDGB CRYPT! THIS IS A TEST MESSAGE 12345";
@@ -401,11 +501,20 @@ static void run_all_tests(void) {
     test_glifo_run_unknown();
     test_glifo_list_no_duplicates();
 
+    test_crypt_empty_buffer();
+    test_crypt_odd_sizes();
+    test_crypt_large_buffer();
+    test_agent_init_and_list();
+    test_agent_get_known();
+    test_agent_get_unknown();
+    test_rand_seeded();
+
     printf("\n=== RESULTADOS: %d/%d PASS, %d FAIL ===\n",
            tests_pass, tests_pass + tests_fail, tests_fail);
 }
 
 int main(void) {
+    srand(42);
     resolve_test_path();
 #ifdef BDGB_SOURCE_DIR
     /* Set BDGB_ROOT so glifo_load_systems() finds glifos/registry.json */

@@ -36,7 +36,4 @@ void glifo_mark_fail(const char *id);
    Solo los glifos en sistemas activos pueden listarse y ejecutarse. */
 int glifo_load_systems(void);
 
-/* Glifos incorporados (built-in) */
-int glifo_primo_run(const char *args);
-
 #endif

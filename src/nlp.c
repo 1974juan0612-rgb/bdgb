@@ -152,7 +152,7 @@ int nlp_load(void) {
 
 int nlp_learn_from_text(const char *text, int max_terms) {
     if (!text) return 0;
-    uint16_t next_cid = 5000;
+    uint32_t next_cid = 5000;
     for (int i = 0; i < dict_count; i++) {
         if (dictionary[i].concept_id >= next_cid)
             next_cid = dictionary[i].concept_id + 1;
@@ -184,10 +184,11 @@ int nlp_learn_from_text(const char *text, int max_terms) {
         int (*pred)(const bdgb_props_t *) = NULL;
         if (pidx < (int)PRED_COUNT) pred = predicate_table[pidx];
 
-        uint8_t node_id = (uint8_t)(next_cid % BDGB_GRID_NODES);
-        nlp_add_term(tokens[i], next_cid, pred, -1, -1);
-        uint8_t rel = (uint8_t)(next_cid % 5);
-        add_concept(node_id, next_cid, 128, rel);
+        uint16_t cid = (uint16_t)(next_cid & 0xFFFF);
+        uint8_t node_id = (uint8_t)(cid % BDGB_GRID_NODES);
+        nlp_add_term(tokens[i], cid, pred, -1, -1);
+        uint8_t rel = (uint8_t)(cid % 5);
+        add_concept(node_id, cid, 128, rel);
         learned++;
         next_cid++;
     }

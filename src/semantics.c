@@ -62,6 +62,13 @@ int add_concept(uint8_t node_id, uint16_t concept_id,
                 uint8_t weight, uint8_t rel_type) {
     if (!sem_initialized) return -1;
 
+    SemanticLink existing[16];
+    int n = find_nodes_by_concept(concept_id, existing, 16);
+    for (int i = 0; i < n; i++) {
+        if (existing[i].node_id == node_id && existing[i].rel_type == rel_type)
+            return 0;
+    }
+
     SemanticLink link;
     link.node_id = node_id;
     link.concept_id = concept_id;

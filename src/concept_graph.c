@@ -73,6 +73,14 @@ int add_concept_edge(uint16_t from, uint16_t to,
                      uint8_t weight, uint8_t rel_type) {
     if (!cg_initialized) return -1;
 
+    ConceptEdge existing[16];
+    int n = get_related_concepts(from, existing, 16);
+    for (int i = 0; i < n; i++) {
+        if (existing[i].from_concept == from && existing[i].to_concept == to &&
+            existing[i].rel_type == rel_type)
+            return 0;
+    }
+
     ConceptEdge edge;
     edge.from_concept = from;
     edge.to_concept = to;

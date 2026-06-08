@@ -2,6 +2,7 @@
 #include "bdgb.h"
 #include "search.h"
 #include "nlp.h"
+#include "util.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,6 +14,8 @@
 #else
 #include <sys/stat.h>
 #endif
+
+#define BDGB_PYTHON_ENV "BDGB_PYTHON"
 
 #ifndef MAX_PATH
 #define MAX_PATH 512
@@ -98,6 +101,10 @@ int agent_load_all(void) {
     json[size] = 0;
     fclose(f);
 
+    for (size_t i = 0; i < (size_t)size; i++) {
+        if (json[i] == 0 && i != (size_t)size - 1) { json[i] = ' '; }
+    }
+
     agent_count = 0;
     char *p = json;
     while ((p = strstr(p, "{")) && agent_count < MAX_AGENTS) {
@@ -178,28 +185,7 @@ int agent_register(const char *id, const char *nombre, const char *schedule) {
  *   TOOL SYSTEM — real external tool execution
  * ============================================================ */
 
-/* Run external command, capture stdout into buffer. Returns 0 on success. */
-static int run_captured(const char *cmd, char *out, size_t outsz) {
-    FILE *fp;
-#ifdef _WIN32
-    fp = _popen(cmd, "r");
-#else
-    fp = popen(cmd, "r");
-#endif
-    if (!fp) return -1;
-    size_t pos = 0;
-    while (pos < outsz - 1) {
-        int c = fgetc(fp);
-        if (c == EOF) break;
-        out[pos++] = (char)c;
-    }
-    out[pos] = 0;
-#ifdef _WIN32
-    return _pclose(fp);
-#else
-    return pclose(fp);
-#endif
-}
+/* run_captured en util.c */
 
 /* Tool: web-fetch — uses curl or wget */
 static int tool_web_fetch(const char *args, char *out, size_t outsz) {
@@ -254,16 +240,21 @@ static int tool_bdgb_search(const char *args, char *out, size_t outsz) {
 static int tool_scraper_trends(const char *args, char *out, size_t outsz) {
     const char *root = getenv("BDGB_ROOT");
     if (!root) root = ".";
-    char cmd[1024];
+    const char *python = getenv(BDGB_PYTHON_ENV);
+    char python_path[512];
+    if (python) {
+        strncpy(python_path, python, sizeof(python_path) - 1);
+    } else {
 #ifdef _WIN32
-    snprintf(cmd, sizeof(cmd),
-        "cd \"%s\" && \"%s/venv/Scripts/python\" \"%s/scripts/scraper_trends.py\" %s 2>&1",
-        root, root, root, args ? args : "");
+        snprintf(python_path, sizeof(python_path), "%s/venv/Scripts/python", root);
 #else
-    snprintf(cmd, sizeof(cmd),
-        "cd \"%s\" && \"%s/venv/bin/python\" \"%s/scripts/scraper_trends.py\" %s 2>&1",
-        root, root, root, args ? args : "");
+        snprintf(python_path, sizeof(python_path), "%s/venv/bin/python", root);
 #endif
+    }
+    char cmd[1024];
+    snprintf(cmd, sizeof(cmd),
+        "cd \"%s\" && \"%s\" \"%s/scripts/scraper_trends.py\" %s 2>&1",
+        root, python_path, root, args ? args : "");
     return run_captured(cmd, out, outsz);
 }
 

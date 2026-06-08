@@ -27,9 +27,9 @@ static void resolve_data_path(void) {
 
 static void clear_data(void) {
     char path[512];
-    const char *files[] = {"nodes.dat", "edges_geom.dat", "edges_dyn.dat",
-                           "semantics.dat", "concepts.idx",
-                           "concept_edges.dat", "concept_edges.idx",
+    const char *files[] = {"nodes.dat",
+                           "semantics.dat",
+                           "concept_edges.dat",
                            "usage_nodes.dat", "usage_concepts.dat",
                            "usage_edges.dat", "nlp_terms.dat", NULL};
     for (int i = 0; files[i]; i++) {
