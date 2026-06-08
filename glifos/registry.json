@@ -1,10 +1,11 @@
 {
-  "version": "3.0",
+  "version": "3.1",
   "_desc": "Registro maestro de sistemas y glifos.",
-  "nota": "Primero se define el sistema (flujo de trabajo), luego se crean los glifos que lo componen.",
+  "nota": "Primero se define el sistema (flujo de trabajo), luego se crean los glifos que lo componen. Los glifos solo mueven datos; las herramientas (online/locales) crean los archivos.",
   "sistemas": [
     {
       "sistema": "vigilancia-tendencias",
+      "rama": "online",
       "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
       "estado": "activo",
       "ruta": "vigilancia-tendencias/",

@@ -11,6 +11,34 @@ Todo sistema tiene un **glifo maestro** (`glifosenilla.json`) en su raiz que def
 - El orden de ejecucion (pipeline)
 - Datos extra propios de la tarea del sistema
 
+## Ramas de sistemas
+
+Cada sistema pertenece a una de tres ramas segun el origen de sus herramientas:
+
+| Rama | Herramientas | Ejemplos |
+|------|-------------|----------|
+| **Online** | Servicios web, APIs externas | Google Trends, YouTube API, OpenAI, scraping web |
+| **Local** | Corren 100% en el dispositivo | Scripts Python, binarios C, herramientas CLI del SO |
+| **Hibrida** | Combinan online y local | Scraper web + procesamiento local + API cloud |
+
+## Que hace un glifo
+
+**Los glifos solo mueven archivos (datos).** No crean contenido ni ejecutan logica de dominio. Toman el output (archivo) de una herramienta y lo pasan como input a la siguiente.
+
+Las **herramientas** son las que producen y consumen los datos. Un glifo es el transporte entre ellas:
+
+```
+Herramienta A (produce data.txt)
+       ↓
+  [GLIFO: mueve data.txt → Herramienta B]
+       ↓
+Herramienta B (consume data.txt, produce resultado.json)
+       ↓
+  [GLIFO: mueve resultado.json → display/output]
+```
+
+Esto hace que los glifos sean inherentemente **cross-platform**: leer, escribir y copiar archivos funciona igual en Windows, Linux, macOS, Android y cualquier dispositivo con sistema de archivos.
+
 ## Independencia y composicion
 
 Cada sistema funciona **independiente** de otros sistemas. Pero un sistema completo puede integrarse como un **glifo** dentro de un sistema superior:
@@ -63,6 +91,7 @@ Cada sistema define su `glifosenilla.json` con esta estructura:
 | `id` | string | Identificador unico del sistema |
 | `nombre` | string | Nombre humano |
 | `tipo` | string | Siempre `"sistema"` |
+| `rama` | string | `online` / `local` / `hibrida` — origen de las herramientas |
 | `descripcion` | string | Que hace el sistema |
 | `estado` | string | `activo` / `inactivo` |
 | `version` | string | Version del schema |
@@ -102,6 +131,14 @@ Define como se conectan los glifos:
 Este campo es **personalizable segun la tarea del sistema**. Cada sistema define aqui los datos que necesita:
 - Fuentes de datos, API keys, keywords, horarios, formatos, rutas, etc.
 - No hay esquema fijo; cada sistema adapta este objeto a su proposito
+
+## Cross-platform
+
+Los glifos solo mueven archivos (copiar, renombrar, leer, escribir). Esta logica funciona **identico** en Windows, Linux, macOS, Android, iOS, tablets y cualquier sistema con un sistema de archivos.
+
+Las herramientas que producen/consumen los datos pueden tener restricciones de plataforma, pero el glifo que las orquesta no. Un sistema hibrido puede tener herramientas locales (Python en PC) y herramientas online (API en la nube) y el glifo conecta ambas sin importar desde donde se ejecute.
+
+Para entornos moviles o embebidos, los glifos nativos (C) se compilan directamente. Los externos requieren el runtime correspondiente (Python, etc.).
 
 ## Regla fundamental
 
