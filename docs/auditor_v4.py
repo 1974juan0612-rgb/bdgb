@@ -265,8 +265,12 @@ tb([
     ["Glifo", "Tipo", "Panal", "Entry"],
     ["primo", "Nativo (C)", "vigilancia-tendencias", "bdgb --glifo-run primo"],
     ["trend-tracker", "Externo (Python)", "vigilancia-tendencias", "python3 trend_tracker.py --daily"],
+    ["generacion-contenido", "Nativo (C)", "generacion-contenido", "bdgb --glifo-run generacion-contenido"],
+    ["trend-fetcher", "Externo (Python)", "generacion-contenido", "python3 trend_fetcher.py"],
+    ["authority-selector", "Externo (Python)", "generacion-contenido", "python3 selector.py"],
+    ["content-writer", "Externo (Python)", "generacion-contenido", "python3 writer.py"],
     ["youtube-automator", "Externo (Python)", "sin panal", "pendiente"],
-], col_widths=[3*cm, 3.5*cm, 4*cm, 4.3*cm])
+], col_widths=[3*cm, 3*cm, 3.5*cm, 4.3*cm])
 
 # Pipeline del panal activo
 if     semilla:
@@ -297,6 +301,28 @@ story.append(Paragraph(
     "Usa curl/wget via popen() para RSS de Google Trends, con fallback a datos mock. "
     "Inyecta conceptos y aprende terminos NLP automaticamente.",
     s_body))
+
+# Pipeline del panal generacion-contenido
+try:
+    gc_semilla_path = os.path.join(BDGB_ROOT, "glifos", "generacion-contenido", "semilla.json")
+    with open(gc_semilla_path, encoding="utf-8") as f:
+        gc_semilla = json.load(f)
+    story.append(Paragraph("<b>Pipeline: generacion-contenido</b>", s_h2))
+    pipe_data = [["Paso", "Glifo", "Accion", "Dependencias"]]
+    for step in gc_semilla.get("pipeline", {}).get("orden", []):
+        pipe_data.append([
+            str(step.get("paso", "?")),
+            step.get("glifo", "?"),
+            step.get("accion", "?"),
+            ", ".join(step.get("dependencias", [])) or "ninguna"
+        ])
+    tb(pipe_data, col_widths=[1.5*cm, 3*cm, 5*cm, 3*cm])
+    story.append(Paragraph(
+        "Ejecucion: <font face='Courier'>bdgb --glifo-run generacion-contenido</font> "
+        "o como carpeta autonoma: <font face='Courier'>python run.py</font> en "
+        "Desktop/generacion-contenido/. Tiempo: dirigido/encargo (bajo demanda del usuario).",
+        s_code))
+except: pass
 
 # ══════════════════════════════════════════════════════════════════════
 # 4. NUCLEO BDGB
@@ -519,14 +545,16 @@ story.append(Paragraph(
     "&bull; Hash indices para busquedas O(1) en semantica y grafo de conceptos.<br/>"
     "&bull; Cifrado novedoso basado unicamente en el modelo BDGB.<br/>"
     "&bull; Puerto Python limpio (bdgb_bridge.py) que evita duplicar logica C.<br/>"
-    "&bull; 26 commits en ~1 mes de desarrollo activo.<br/>"
+    "&bull; 28 commits en ~1 mes de desarrollo activo.<br/>"
+    "&bull; Segundo panal operativo (generacion-contenido): pipeline 3 glifos, IA externa, PDF en escritorio. "
+    "Funciona como carpeta autonoma.<br/>"
     "&bull; Documentacion completa: whitepaper (PDF), README, glifos/README, auditorias."
     , s_body))
 
 story.append(Spacer(1, 4))
 story.append(Paragraph("<b>Debilidades y riesgos:</b>", s_body))
 story.append(Paragraph(
-    "&bull; Un solo panal activo (vigilancia-tendencias) con solo 2 glifos. Poca masa critica.<br/>"
+    "&bull; Dos panales activos: vigilancia-tendencias (2 glifos) y generacion-contenido (3 glifos + orquestador nativo).<br/>"
     "&bull; youtube-automator es placeholder sin implementacion real ni panal asignado.<br/>"
     "&bull; NLP: 19 terminos base, stopwords filtradas, stemming aplicado. Sin lematizacion.<br/>"
     "&bull; Sin usuarios reales fuera del creador. No hay validacion externa del concepto.<br/>"
