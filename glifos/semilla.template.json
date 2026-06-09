@@ -1,19 +1,20 @@
 {
-  "id": "nombre-del-panal",
-  "nombre": "Nombre Humano del Panal",
-  "tipo": "panal",
-  "descripcion": "Describir que flujo de trabajo realiza este panal",
+  "id": "nombre-del-panal-o-colmena",
+  "nombre": "Nombre Humano",
+  "tipo": "panal | colmena",
+  "descripcion": "Describir que flujo de trabajo realiza",
   "estado": "activo",
   "version": "1.0",
   "rama": "online / local / hibrida",
   "creado": "YYYY-MM-DD",
 
-  "_regla": "Esta semilla es la autoridad del panal. Lo que no esta declarado aqui no existe ni se ejecuta.",
+  "_regla": "Esta semilla es la autoridad. Lo que no esta declarado aqui no existe ni se ejecuta.",
   "_clasificacion": "Primo=codigo original (src/glifo.c). Semilla=este archivo. Comun=glifos operativos.",
+  "_nota_tipo": "Si tipo=colmena, solo contiene panales como glifos. No tiene tools directas.",
 
   "tiempo": {
     "tipo": "autonomo | dirigido",
-    "descripcion": "autonomo=se activa por horario propio. dirigido=lo activa un agente externo (usuario, programa, otro panal)",
+    "descripcion": "autonomo=se activa por horario. dirigido=lo activa un agente externo",
     "schedule": {
       "tipo": "diario | semanal | mensual | una_vez",
       "hora": "HH:MM",
@@ -31,30 +32,30 @@
       "descripcion": "Que hace este glifo"
     },
     {
-      "id": "glifo-2",
-      "nombre": "Nombre del Glifo 2",
+      "id": "glifo-externo",
+      "nombre": "Glifo Externo",
       "tipo": "externo",
-      "entry": "python3 glifos/<panal>/glifos/glifo-2/script.py",
+      "entry": "python3 glifos/<panal>/glifos/glifo-externo/script.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Que hace este glifo"
+      "descripcion": "Glifo externo actualizable"
     },
     {
-      "id": "subsistema-ejemplo",
-      "nombre": "Panal Externo Integrado",
+      "id": "sub-panal",
+      "nombre": "Panal Integrado",
       "tipo": "panal",
-      "ref": "glifos/otro-panal/semilla.json",
+      "ref": "glifos/sub-panal/semilla.json",
       "actualizable": false,
-      "descripcion": "Panal completo que funciona como glifo dentro de este panal"
+      "descripcion": "Panal completo que funciona como glifo dentro de este panal o colmena"
     }
   ],
 
   "relaciones": [
     {
       "de": "glifo-1",
-      "a": "glifo-2",
+      "a": "glifo-externo",
       "tipo": "ejecucion",
-      "flujo": "glifo-1 debe ejecutarse antes que glifo-2, su salida es entrada para glifo-2"
+      "flujo": "glifo-1 ejecuta antes que glifo-externo"
     }
   ],
 
@@ -69,7 +70,7 @@
       },
       {
         "paso": 2,
-        "glifo": "glifo-2",
+        "glifo": "glifo-externo",
         "accion": "--run",
         "args": ["--run"],
         "dependencias": ["glifo-1"],
@@ -79,7 +80,7 @@
   },
 
   "datos_panal": {
-    "nota": "Este objeto es COMPLETAMENTE PERSONALIZABLE segun la tarea del panal",
+    "nota": "Completamente personalizable segun la tarea",
     "ejemplo_clave": "valor"
   },
 

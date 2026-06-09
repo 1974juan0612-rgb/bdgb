@@ -1,8 +1,31 @@
-# Sistema de Glifos — Panal
+# Sistema de Glifos — Colmena y Panales
+
+## Jerarquia
+
+```
+COLMENA (orquesta panales completos como glifos)
+  ├── PANAL (flujo de trabajo autonomo o dirigido)
+  │     ├── GLIFO: nodo operativo (nativo/externo/panal)
+  │     ├── GLIFO: nodo operativo
+  │     └── ...
+  ├── PANAL (puede ser glifo de otro panal o de la colmena)
+  │     └── ...
+  └── ...
+```
+
+Tres niveles:
+
+| Nivel | Que es | Analogia |
+|-------|--------|----------|
+| **Colmena** | Orquesta panales completos. Es la estructura superior | La fabrica completa |
+| **Panal** | Flujo de trabajo con proposito definido. Contiene glifos | Una linea de ensamblaje |
+| **Glifo** | Nodo operativo que manipula informacion usando herramientas | Una estacion de trabajo |
+
+Un **Panal** puede actuar como **Glifo** dentro de otro Panal o de una Colmena. Esto se declara con `"tipo": "panal"` en la lista de glifos.
 
 ## Arquitectura
 
-Cada **Glifo** pertenece a un **Panal**. Un Panal es un **flujo de trabajo** con un proposito definido. Los glifos son los nodos operativos.
+Un **Panal** es un **flujo de trabajo** con un proposito definido. Los glifos son los nodos operativos.
 
 Todo panal tiene una **Semilla** (`semilla.json`) en su raiz que es la autoridad del panal. Define:
 
@@ -66,15 +89,16 @@ Esto permite tener glifos externos (scripts Python) que se puedan actualizar ind
 
 ## Independencia y composicion
 
-Cada panal funciona **independiente** de otros panales. Pero un panal completo puede integrarse como un **glifo** dentro de otro panal superior:
+Cada panal funciona **independiente** de otros panales. Pero un panal completo puede integrarse como un **glifo** dentro de otro panal o dentro de una **colmena**:
 
 ```
-PANAL PADRE (produccion-automatica)
-  ├── glifo: scraper (nativo)
-  ├── glifo: editor (externo)
-  └── PANAL: vigilancia-tendencias ← integrado como glifo
-        ├── glifo: primo
-        └── glifo: trend-tracker
+COLMEÑA (colmena-de-contenido)
+  ├── PANAL: vigilancia-tendencias ← integrado como glifo
+  │     ├── glifo: primo
+  │     └── glifo: trend-tracker
+  ├── PANAL: youtube-automator ← integrado como glifo
+  │     └── ...
+  └── glifo: publicador (nativo)
 ```
 
 Esto se define en `glifos[]` con `"tipo": "panal"`:
@@ -88,22 +112,27 @@ Esto se define en `glifos[]` con `"tipo": "panal"`:
 }
 ```
 
+Una **Colmena** es un nivel superior que no tiene glifos propios: solo orquesta panales completos. Su semilla define que panales la componen y como se relacionan entre ellos.
+
 ## Estructura de directorios
 
 ```
 glifos/
   README.md
   registry.json
-  vigilancia-tendencias/         ← panal
-    semilla.json                 ← SEMILLA: autoridad del panal
+  colmenas/                        ← colmenas (opcional)
+    colmena-ejemplo/
+      semilla.json                 ← SEMILLA: autoridad de la colmena
+  vigilancia-tendencias/           ← panal
+    semilla.json                   ← SEMILLA: autoridad del panal
     README.md
     glifos/
-      primo/glifo.json           ← config del glifo nativo
-      trend-tracker/             ← codigo del glifo externo
+      primo/glifo.json             ← config del glifo nativo
+      trend-tracker/               ← codigo del glifo externo
         glifo.json
         trend_tracker.py
         daily/ + weekly/
-  youtube-automator/             ← panal sin semilla aun
+  youtube-automator/               ← panal sin semilla aun
     config.json
 ```
 
@@ -220,3 +249,9 @@ python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --dai
 |-------|---------|--------|--------|------|--------|
 | `vigilancia-tendencias` | `semilla.json` | Autonomo (diario 08:00) | `primo`, `trend-tracker` | online | Activo |
 | `youtube-automator` | (pendiente) | (pendiente) | (sin asignar) | — | Inactivo |
+
+## Colmenas
+
+| Colmena | Semilla | Panales | Estado |
+|---------|---------|---------|--------|
+| (aun no definida) | — | — | — |
