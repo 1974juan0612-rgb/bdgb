@@ -132,7 +132,8 @@ story.append(Spacer(1, 0.5*cm))
 story.append(HRFlowable(width="60%", thickness=1.5, color=ACCENT, spaceBefore=4, spaceAfter=8))
 story.append(Paragraph(
     "Rejilla binaria 16x16 con dinamica Kaprekar, cifrado de flujo BDGB-Cipher v1, "
-    "motor semantico, NLP, aprendizaje, sistema de glifos nativos C y agentes externos Python.",
+    "motor semantico, NLP, aprendizaje, sistema de glifos nativos C y agentes externos Python.<br/>"
+    "Jerarquia: Familia &gt; Colmena &gt; Panal &gt; Glifo. Ramas: Online, Local, Hibrida.",
     ParagraphStyle("portada_desc", parent=s_body, fontSize=9, leading=13,
                    alignment=TA_CENTER, textColor=HexColor("#444"))))
 story.append(Spacer(1, 1.5*cm))
@@ -144,6 +145,8 @@ meta = [
     ["Lineas Python", "~2,200 (bridge + GUI + scraper + audit + docs)"],
     ["Nodos", "256 (16x16 grid, 8-bit)"],
     ["Tests", f"{pass_count}/30 PASS"],
+    ["Jerarquia", "Familia > Colmena > Panal > Glifo"],
+    ["Ramas", "Online, Local, Hibrida"],
     ["Fecha auditoria", datetime.now().strftime("%Y-%m-%d %H:%M")],
 ]
 mt = Table(meta, colWidths=[3.2*cm, 10*cm])
@@ -242,10 +245,11 @@ story.append(Paragraph(
     "operativo que manipula informacion usando herramientas como instrumentos. Su logica "
     "es de orquestacion: invoca herramientas, pasa datos, recibe resultados, y decide "
     "el siguiente paso para completar el flujo de trabajo. Los glifos se agrupan en "
-    "panales, que son flujos de trabajo con un proposito definido. Cada panal tiene "
-    "una semilla (semilla.json) que define el pipeline completo, "
-    "el control de activacion (Tiempo), la actualizabilidad de cada glifo, "
-    "y los datos extra del panal.", s_body))
+    "panales, que son flujos de trabajo con un proposito definido. La jerarquia completa "
+    "es: Familia &gt; Colmena &gt; Panal &gt; Glifo. Cada panal tiene una semilla "
+    "(semilla.json) que define el pipeline completo, el control de activacion (Tiempo), "
+    "la actualizabilidad de cada glifo, y los datos extra del panal. "
+    "Un panal puede actuar como glifo dentro de otro panal o colmena.", s_body))
 
 story.append(Paragraph("<b>Arquitectura:</b>", s_body))
 story.append(Paragraph(
@@ -562,17 +566,54 @@ story.append(Paragraph(
     "<b>? Si, vale la pena seguir.</b> La tecnologia Glifo es genuinamente original "
     "y tiene una base solida: codigo limpio, zero dependencias, tests pasando, "
     "documentacion completa. Es una criatura unica.<br/><br/>"
-    "Sin embargo, la pregunta real no es si seguir desarrollando, sino <b>para que</b>. "
-    "La tecnologia ya funciona. Ahora necesita casos de uso reales, aplicaciones concretas, "
-    "usuarios. Sin eso, es una hermosa maquina sin proposito.<br/><br/>"
-    "Recomendacion: pasar de crear la tecnologia a <b>aplicarla</b>. "
-    "Construir panales reales que hagan cosas utiles. "
-    "El potencial esta en los panales, no en el nucleo. "
-    "El nucleo ya esta solido.",
+    "La jerarquia completa esta definida: Familia &gt; Colmena &gt; Panal &gt; Glifo. "
+    "Las ramas (Online, Local, Hibrida) organizan los panales por origen de herramientas. "
+    "El nucleo C compila y funciona, los tests pasan.<br/><br/>"
+    "El siguiente paso es aplicar la tecnologia a problemas reales.",
     ParagraphStyle("veredicto", parent=s_body, fontSize=9, leading=13,
                    textColor=DARK, backColor=HexColor("#f0f4ff"),
                    leftIndent=8, rightIndent=8, spaceBefore=4, spaceAfter=4,
                    borderPadding=6, borderColor=ACCENT, borderWidth=0.5)))
+
+story.append(Spacer(1, 8))
+story.append(Paragraph("10. Roadmap — Proximos Pasos", s_h1))
+hr()
+story.append(Paragraph(
+    "La tecnologia base esta completa. Lo que sigue es construir sobre ella:",
+    s_body))
+
+tb([
+    ["Fase", "Que", "Por que"],
+    ["1. Panal real", "Completar vigilancia-tendencias con "
+     "ejecucion diaria real, reportes funcionales, "
+     "inyeccion automatica en BDGB",
+     "Valida que la maquina funciona en el mundo real"],
+    ["2. Segundo panal", "Definir la semilla de youtube-automator "
+     "con su Tiempo (dirigido o autonomo) y "
+     "sus glifos",
+     "Demuestra que la arquitectura es reutilizable"],
+    ["3. Prueba cross-platform", "Compilar y ejecutar en Linux "
+     "real (no solo #ifdefs)",
+     "Confirma que la portabilidad no es teorica"],
+    ["4. Expansion NLP", "Agregar stemming, stopwords, sinonimia "
+     "al modulo NLP",
+     "Mejora la busqueda semantica significativamente"],
+    ["5. Colmena", "Agrupar vigilancia-tendencias + "
+     "youtube-automator bajo una colmena",
+     "Prueba la jerarquia completa en produccion"],
+    ["6. Documentar caso de uso", "Escribir un tutorial de como "
+     "crear un panal desde cero",
+     "Permite que otros (o tu futuro yo) usen el sistema"],
+], col_widths=[2.5*cm, 6.5*cm, 5.8*cm])
+
+story.append(Spacer(1, 6))
+story.append(Paragraph(
+    "<b>Prioridad inmediata:</b> Fase 1. Que el unico panal que existe funcione "
+    "de verdad en el mundo real. Despues, expandir.",
+    ParagraphStyle("roadmap_note", parent=s_body, fontSize=8.5, leading=11,
+                   textColor=DARK, backColor=HexColor("#fef3c7"),
+                   leftIndent=6, rightIndent=6, spaceBefore=4, spaceAfter=4,
+                   borderPadding=4, borderColor=AMBER, borderWidth=0.5)))
 
 story.append(Spacer(1, 1.5*cm))
 story.append(Paragraph(
