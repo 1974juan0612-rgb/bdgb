@@ -527,7 +527,7 @@ story.append(Paragraph("<b>Debilidades y riesgos:</b>", s_body))
 story.append(Paragraph(
     "&bull; Un solo panal activo (vigilancia-tendencias) con solo 2 glifos. Poca masa critica.<br/>"
     "&bull; youtube-automator es placeholder sin implementacion real ni panal asignado.<br/>"
-    "&bull; NLP limitado: 19 terminos base, sin stemming, sin stopwords, sin lematizacion.<br/>"
+    "&bull; NLP: 19 terminos base, stopwords filtradas, stemming aplicado. Sin lematizacion.<br/>"
     "&bull; Sin usuarios reales fuera del creador. No hay validacion externa del concepto.<br/>"
     "&bull; Sin CI/CD, sin tests automatizados en push, sin integracion continua.<br/>"
     "&bull; El cifrado BDGB-Cipher v1 no ha sido auditado por criptografos profesionales "
@@ -566,6 +566,8 @@ story.append(Paragraph(
     "<b>? Si, vale la pena seguir.</b> La tecnologia Glifo es genuinamente original "
     "y tiene una base solida: codigo limpio, zero dependencias, tests pasando, "
     "documentacion completa. Es una criatura unica.<br/><br/>"
+    "Mejoras recientes: busqueda inversa por nodo O(1) via node_hash, "
+    "stopwords filtradas en tokenizacion, stemming basico de sufijos españoles. "
     "La jerarquia completa esta definida: Familia &gt; Colmena &gt; Panal &gt; Glifo. "
     "Las ramas (Online, Local, Hibrida) organizan los panales por origen de herramientas. "
     "El nucleo C compila y funciona, los tests pasan.<br/><br/>"

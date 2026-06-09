@@ -47,6 +47,9 @@ static int predicate_index(int (*pred)(const bdgb_props_t *)) {
     return PRED_NONE;
 }
 
+static int nlp_stem(const char *word, char *out, int outsz);
+static int is_stopword(const char *word);
+
 static int auto_predicate_idx(const char *word) {
     if (strstr(word, "simetr")) return PRED_SIMETRICO;
     if (strstr(word, "dens"))   return PRED_DENSO;
@@ -66,6 +69,12 @@ void nlp_set_data_path(const char *path) {
 static NLPTerm *lookup_term(const char *word) {
     for (int i = 0; i < dict_count; i++) {
         if (strcmp(dictionary[i].word, word) == 0) return &dictionary[i];
+    }
+    char stemmed[32];
+    if (nlp_stem(word, stemmed, sizeof(stemmed))) {
+        for (int i = 0; i < dict_count; i++) {
+            if (strcmp(dictionary[i].word, stemmed) == 0) return &dictionary[i];
+        }
     }
     return NULL;
 }
@@ -179,14 +188,19 @@ int nlp_learn_from_text(const char *text, int max_terms) {
 
     int learned = 0;
     for (int i = 0; i < n && learned < max_terms; i++) {
+        if (is_stopword(tokens[i])) continue;
         if (lookup_term(tokens[i])) continue;
-        int pidx = auto_predicate_idx(tokens[i]);
+        char stemmed[32];
+        nlp_stem(tokens[i], stemmed, sizeof(stemmed));
+        if (lookup_term(stemmed)) continue;
+        const char *store = (stemmed[0] && strlen(stemmed) >= 3) ? stemmed : tokens[i];
+        int pidx = auto_predicate_idx(store);
         int (*pred)(const bdgb_props_t *) = NULL;
         if (pidx < (int)PRED_COUNT) pred = predicate_table[pidx];
 
         uint16_t cid = (uint16_t)(next_cid & 0xFFFF);
         uint8_t node_id = (uint8_t)(cid % BDGB_GRID_NODES);
-        nlp_add_term(tokens[i], cid, pred, -1, -1);
+        nlp_add_term(store, cid, pred, -1, -1);
         uint8_t rel = (uint8_t)(cid % 5);
         add_concept(node_id, cid, 128, rel);
         learned++;
@@ -209,6 +223,64 @@ void nlp_list_terms(void) {
                dictionary[i].dynamic_filter, dictionary[i].geom_type_filter);
     }
     printf("]}\n");
+}
+
+/* ----- Stopwords ----- */
+
+static const char *stopwords[] = {
+    "de", "la", "que", "el", "en", "y", "a", "los", "del", "se",
+    "las", "por", "un", "para", "con", "no", "una", "su", "al",
+    "es", "lo", "como", "mas", "pero", "sus", "le", "ya", "este",
+    "entre", "porque", "este", "esta", "muy", "todo", "esa", "ese",
+    "the", "and", "for", "are", "but", "not", "you", "all", "can",
+    "had", "her", "was", "one", "our", "out", "has", "have", "been",
+    NULL
+};
+
+static int is_stopword(const char *word) {
+    for (int i = 0; stopwords[i]; i++) {
+        if (strcmp(word, stopwords[i]) == 0) return 1;
+    }
+    return 0;
+}
+
+/* ----- Simple Spanish stemmer ----- */
+
+static int nlp_stem(const char *word, char *out, int outsz) {
+    int len = (int)strlen(word);
+    if (len < 4) { strncpy(out, word, outsz - 1); out[outsz - 1] = 0; return 0; }
+
+    char lower[64];
+    for (int i = 0; i < len && i < 63; i++)
+        lower[i] = tolower((unsigned char)word[i]);
+    lower[len < 63 ? len : 63] = 0;
+    len = (int)strlen(lower);
+
+    int stemmed = 0;
+    if (len > 6 && strcmp(&lower[len - 6], "mente") == 0)  { len -= 6; stemmed = 1; }
+    if (len > 5 && strcmp(&lower[len - 5], "ción") == 0)   { len -= 5; stemmed = 1; }
+    if (len > 5 && strcmp(&lower[len - 5], "sión") == 0)   { len -= 5; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "dad") == 0)    { len -= 4; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "tad") == 0)    { len -= 4; stemmed = 1; }
+    if (!stemmed && len > 4 && strcmp(&lower[len - 4], "ando") == 0) { len -= 4; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "iendo") == 0)  { len -= 5; stemmed = 1; }
+
+    if (len > 3 && (strcmp(&lower[len - 3], "aba") == 0 ||
+                    strcmp(&lower[len - 3], "ido") == 0))  { len -= 3; stemmed = 1; }
+
+    if (len > 2) {
+        if (lower[len - 1] == 'o' || lower[len - 1] == 'a' ||
+            lower[len - 1] == 's') {
+            if (!(len > 3 && lower[len - 2] == 'u' && lower[len - 3] == 'q'))
+                { len--; }
+        }
+    }
+
+    if (len <= 0) len = 1;
+    if (len >= outsz) len = outsz - 1;
+    memcpy(out, lower, len);
+    out[len] = 0;
+    return stemmed;
 }
 
 /* ----- Core NLP ----- */
@@ -246,14 +318,20 @@ static int tokenize(const char *text, char tokens[][32], int max_tokens) {
     int count = 0;
     const char *p = text;
     while (*p && count < max_tokens) {
-        while (*p == ' ' || *p == ',' || *p == '.') p++;
+        while (*p == ' ' || *p == ',' || *p == '.' || *p == '\n'
+               || *p == '\r' || *p == '\t' || *p == '\"'
+               || *p == '(' || *p == ')' || *p == '!' || *p == '?'
+               || *p == ';' || *p == ':' || *p == '-') p++;
         if (!*p) break;
         int i = 0;
-        while (*p && *p != ' ' && *p != ',' && *p != '.' && i < 31) {
+        while (*p && *p != ' ' && *p != ',' && *p != '.' && *p != '\n'
+               && *p != '\r' && *p != '\t' && *p != ';' && *p != ':'
+               && *p != '-' && i < 31) {
             tokens[count][i++] = tolower((unsigned char)*p);
             p++;
         }
         tokens[count][i] = '\0';
+        if (is_stopword(tokens[count])) continue;
         count++;
     }
     return count;

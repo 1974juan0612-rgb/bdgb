@@ -7,6 +7,7 @@ static char sem_path[512] = {0};
 static int  sem_initialized = 0;
 
 static SemHashBucket sem_hash[HASH_BUCKETS];
+static SemHashBucket node_hash[BDGB_GRID_NODES];
 
 static uint8_t hash_u16(uint16_t key) {
     return (uint8_t)((key ^ (key >> 4)) & 0xFF);
@@ -34,6 +35,7 @@ static int sem_file_exists(const char *filename) {
 
 int rebuild_sem_hash(void) {
     memset(sem_hash, 0, sizeof(sem_hash));
+    memset(node_hash, 0, sizeof(node_hash));
     if (!sem_file_exists(SEMANTICS_FILE)) return 0;
 
     char path[512];
@@ -51,6 +53,14 @@ int rebuild_sem_hash(void) {
             e->node_id = link.node_id;
             e->weight = link.weight;
             e->rel_type = link.rel_type;
+        }
+        SemHashBucket *nb = &node_hash[link.node_id];
+        if (nb->count < HASH_CHAIN_MAX) {
+            SemHashEntry *ne = &nb->entries[nb->count++];
+            ne->concept_id = link.concept_id;
+            ne->node_id = link.node_id;
+            ne->weight = link.weight;
+            ne->rel_type = link.rel_type;
         }
     }
 
@@ -94,6 +104,14 @@ int add_concept(uint8_t node_id, uint16_t concept_id,
         e->weight = weight;
         e->rel_type = rel_type;
     }
+    SemHashBucket *nb = &node_hash[node_id];
+    if (nb->count < HASH_CHAIN_MAX) {
+        SemHashEntry *ne = &nb->entries[nb->count++];
+        ne->concept_id = concept_id;
+        ne->node_id = node_id;
+        ne->weight = weight;
+        ne->rel_type = rel_type;
+    }
 
     return 0;
 }
@@ -125,18 +143,14 @@ int find_concepts_by_node(uint8_t node_id,
     if (!sem_initialized) return -1;
 
     int count = 0;
-    for (int b = 0; b < HASH_BUCKETS && count < max_out; b++) {
-        SemHashBucket *bucket = &sem_hash[b];
-        for (int i = 0; i < bucket->count && count < max_out; i++) {
-            SemHashEntry *e = &bucket->entries[i];
-            if (e->node_id == node_id) {
-                out[count].node_id = e->node_id;
-                out[count].concept_id = e->concept_id;
-                out[count].weight = e->weight;
-                out[count].rel_type = e->rel_type;
-                count++;
-            }
-        }
+    SemHashBucket *nb = &node_hash[node_id];
+    for (int i = 0; i < nb->count && count < max_out; i++) {
+        SemHashEntry *e = &nb->entries[i];
+        out[count].node_id = e->node_id;
+        out[count].concept_id = e->concept_id;
+        out[count].weight = e->weight;
+        out[count].rel_type = e->rel_type;
+        count++;
     }
 
     return count;
