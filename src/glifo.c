@@ -95,7 +95,7 @@ int glifo_load_systems(void) {
 
     int loaded = 0;
     char *p = json;
-    while ((p = strstr(p, "\"sistema\"")) && loaded < MAX_GLIFOS) {
+    while ((p = strstr(p, "\"panal\"")) && loaded < MAX_GLIFOS) {
         char *bs = p;
         while (bs > json && *bs != '{') bs--;
         if (*bs != '{') { p = p + 1; continue; }
@@ -110,7 +110,7 @@ int glifo_load_systems(void) {
         if (!is_active_system(block)) { p = be + 1; continue; }
 
         char sn[64] = {0};
-        json_strval(block, "sistema", sn, sizeof(sn));
+        json_strval(block, "panal", sn, sizeof(sn));
         if (sn[0] == 0) { p = be + 1; continue; }
 
         char sg[16][64];

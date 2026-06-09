@@ -111,9 +111,9 @@ fail_count = testout.count("FAIL") if "FAIL" in testout else "0"
 # Load semilla.json
 try:
     with open(os.path.join(BDGB_ROOT, "glifos", "vigilancia-tendencias", "semilla.json"), encoding="utf-8") as f:
-        glifosenilla = json.load(f)
+        semilla = json.load(f)
 except:
-    glifosenilla = {}
+    semilla = {}
 
 # Load registry
 try:
@@ -264,10 +264,10 @@ tb([
 ], col_widths=[3*cm, 3.5*cm, 4*cm, 4.3*cm])
 
 # Pipeline del panal activo
-if glifosenilla:
+if     semilla:
     story.append(Paragraph("<b>Pipeline: vigilancia-tendencias</b>", s_h2))
     pipe_data = [["Paso", "Glifo", "Accion", "Dependencias"]]
-    for step in glifosenilla.get("pipeline", {}).get("orden", []):
+    for step in     semilla.get("pipeline", {}).get("orden", []):
         pipe_data.append([
             str(step.get("paso", "?")),
             step.get("glifo", "?"),
@@ -278,7 +278,7 @@ if glifosenilla:
 
     story.append(Paragraph("<b>Relaciones entre glifos:</b>", s_body))
     rel_data = [["De", "A", "Tipo"]]
-    for rel in glifosenilla.get("relaciones", []):
+    for rel in     semilla.get("relaciones", []):
         rel_data.append([
             rel.get("de", "?"),
             rel.get("a", "?"),
