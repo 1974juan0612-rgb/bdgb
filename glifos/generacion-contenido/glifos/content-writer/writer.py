@@ -34,7 +34,6 @@ def try_browser_automation(topic):
     """Intenta automatizar el navegador como un humano: abre, pega, envia, copia resultado."""
     try:
         import pyautogui as pg
-        import pyperclip
     except ImportError:
         return None
 
@@ -50,7 +49,7 @@ def try_browser_automation(topic):
     pg.press("enter")
     time.sleep(4)
 
-    pyperclip.copy(prompt)
+    copy_to_clipboard(prompt)
     pg.hotkey("ctrl", "v")
     time.sleep(1)
     pg.press("enter")
@@ -62,13 +61,51 @@ def try_browser_automation(topic):
     pg.hotkey("ctrl", "c")
     time.sleep(0.5)
 
-    result = pyperclip.paste()
+    result = paste_from_clipboard()
     if result and len(result) > 50 and topic.lower() in result.lower():
         print(f"[content-writer] Respuesta capturada ({len(result)} caracteres)")
         return result
 
     print("[content-writer] No se pudo capturar la respuesta automaticamente.")
     return None
+
+
+def copy_to_clipboard(text):
+    try:
+        import pyperclip
+        pyperclip.copy(text)
+        return True
+    except ImportError:
+        try:
+            if os.name == "nt":
+                r = subprocess.run(["powershell", "-command",
+                                   "$input|Set-Clipboard"],
+                                   input=text.encode("utf-8"), capture_output=True, timeout=5)
+                return r.returncode == 0
+            else:
+                r = subprocess.run(["xclip", "-selection", "clipboard"],
+                                   input=text.encode("utf-8"), capture_output=True, timeout=5)
+                return r.returncode == 0
+        except: pass
+    return False
+
+
+def paste_from_clipboard():
+    try:
+        import pyperclip
+        return pyperclip.paste()
+    except ImportError:
+        try:
+            if os.name == "nt":
+                r = subprocess.run(["powershell", "-command", "Get-Clipboard"],
+                                   capture_output=True, text=True, timeout=5)
+                return r.stdout.strip()
+            else:
+                r = subprocess.run(["xclip", "-selection", "clipboard", "-o"],
+                                   capture_output=True, text=True, timeout=5)
+                return r.stdout.strip()
+        except: pass
+    return ""
 
 
 def interact_with_user(topic):
@@ -92,13 +129,12 @@ def interact_with_user(topic):
     print("  5. Presiona Enter aqui cuando estes listo")
     print("=" * 60)
 
-    import pyperclip
-    pyperclip.copy(prompt)
+    copy_to_clipboard(prompt)
     open_browser(AI_URL)
 
     input("\n  Presiona Enter despues de copiar la respuesta de la IA...")
 
-    result = pyperclip.paste()
+    result = paste_from_clipboard()
     if result and len(result) > 50:
         print(f"[content-writer] Texto capturado del portapapeles ({len(result)} caracteres)")
         return result
