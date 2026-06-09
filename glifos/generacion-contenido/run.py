@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Ejecutable del panal generacion-contenido.
-   Ejecuta el pipeline completo: trend-fetcher -> authority-selector -> content-writer.
+   Pipeline: trend-fetcher -> authority-selector -> content-writer -> clipboard-capturer.
+   Paso 3 es interactivo: abre la IA en el navegador. Tu pegas el prompt y copias la respuesta.
+   Paso 4 lee el portapapeles y guarda PDF.
    Uso: python run.py"""
 
 import os, sys, subprocess
@@ -10,6 +12,7 @@ SCRIPTS = [
     ("trend-fetcher",      "glifos/trend-fetcher/trend_fetcher.py"),
     ("authority-selector", "glifos/authority-selector/selector.py"),
     ("content-writer",     "glifos/content-writer/writer.py"),
+    ("clipboard-capturer", "glifos/clipboard-capturer/capturer.py"),
 ]
 
 def main():

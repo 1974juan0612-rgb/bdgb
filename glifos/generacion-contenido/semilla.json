@@ -43,7 +43,16 @@
       "entry": "python3 glifos/generacion-contenido/glifos/content-writer/writer.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Usa IA externa (OpenAI, Claude, etc.) para generar un articulo profundo y lo guarda como PDF en ~/Desktop/guiones/"
+      "descripcion": "Copia prompt al portapapeles, abre la IA en el navegador, espera que pegues y copies la respuesta"
+    },
+    {
+      "id": "clipboard-capturer",
+      "nombre": "Capturador de Portapapeles",
+      "tipo": "externo",
+      "entry": "python3 glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Lee el portapapeles con la respuesta de la IA y la guarda como PDF en Desktop/guiones/"
     }
   ],
 
@@ -58,7 +67,13 @@
       "de": "authority-selector",
       "a": "content-writer",
       "tipo": "datos",
-      "flujo": "authority-selector escribe tema_seleccionado.json, content-writer lo lee y genera el articulo"
+      "flujo": "authority-selector escribe tema_seleccionado.json, content-writer lo lee y prepara prompt"
+    },
+    {
+      "de": "content-writer",
+      "a": "clipboard-capturer",
+      "tipo": "interaccion-humana",
+      "flujo": "content-writer copia prompt al portapapeles, usuario pega en IA y copia respuesta. clipboard-capturer lee el portapapeles y guarda PDF"
     }
   ],
 
@@ -82,10 +97,18 @@
       {
         "paso": 3,
         "glifo": "content-writer",
-        "accion": "write",
+        "accion": "prepare + clipboard + browser",
         "args": [],
         "dependencias": ["authority-selector"],
-        "descripcion": "Leer tema_seleccionado.json, llamar a IA externa, generar articulo PDF en Desktop/guiones/"
+        "descripcion": "Copiar prompt al portapapeles, abrir IA en navegador. Usuario pega prompt en IA, copia respuesta"
+      },
+      {
+        "paso": 4,
+        "glifo": "clipboard-capturer",
+        "accion": "capture + pdf",
+        "args": [],
+        "dependencias": ["content-writer"],
+        "descripcion": "Leer portapapeles con respuesta de la IA, guardar como PDF en Desktop/guiones/"
       }
     ]
   },

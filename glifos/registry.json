@@ -39,7 +39,7 @@
       "estado": "activo",
       "ruta": "generacion-contenido/",
       "semilla": "generacion-contenido/semilla.json",
-      "glifos": ["trend-fetcher", "authority-selector", "content-writer", "generacion-contenido"]
+      "glifos": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "generacion-contenido"]
     }
   ],
   "glifos": [
@@ -161,6 +161,23 @@
       "metricas": {
         "ejecuciones": 0,
         "articulos_generados": 0
+      }
+    },
+    {
+      "id": "clipboard-capturer",
+      "nombre": "Capturador de Portapapeles",
+      "tipo": "externo",
+      "descripcion": "Lee portapapeles con respuesta de IA y guarda PDF en ~/Desktop/guiones/",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/clipboard-capturer/",
+      "entry": "python3 generacion-contenido/glifos/clipboard-capturer/capturer.py",
+      "dependencias": ["content-writer"],
+      "metricas": {
+        "ejecuciones": 0,
+        "pdfs_generados": 0
       }
     },
     {

@@ -1,0 +1,12 @@
+{
+  "id": "clipboard-capturer",
+  "nombre": "Capturador de Portapapeles",
+  "tipo": "externo",
+  "lenguaje": "python3",
+  "descripcion": "Lee el portapapeles (donde copiaste la respuesta de la IA) y lo guarda como PDF en Desktop/guiones/",
+  "entry": "python3 glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py",
+  "estado": "activo",
+  "panal": "generacion-contenido",
+  "actualizable": true,
+  "dependencias": ["content-writer"]
+}
