@@ -1,7 +1,25 @@
 {
-  "version": "3.2",
-  "_desc": "Registro maestro de panales y glifos.",
-  "nota": "Cada panal tiene una semilla.json que es su autoridad. El Tiempo (glifo de control) determina cuando se activa. Los glifos manipulan informacion usando herramientas como instrumentos.",
+  "version": "3.3",
+  "_desc": "Registro maestro de familias, colmenas, panales y glifos.",
+  "nota": "Jerarquia: Familia > Colmena > Panal > Glifo. Cada panal tiene semilla.json. El Tiempo controla la activacion. Un panal puede ser glifo de otro panal o colmena.",
+  "familias": [
+    {
+      "id": "nombre-familia",
+      "descripcion": "Agrupa colmenas afines",
+      "colmenas": ["colmena-ejemplo"],
+      "estado": "activo"
+    }
+  ],
+  "colmenas": [
+    {
+      "colmena": "nombre-colmena",
+      "descripcion": "Orquesta panales completos",
+      "panales": ["vigilancia-tendencias"],
+      "estado": "activo",
+      "ruta": "colmenas/nombre-colmena/",
+      "semilla": "colmenas/nombre-colmena/semilla.json"
+    }
+  ],
   "panales": [
     {
       "panal": "vigilancia-tendencias",

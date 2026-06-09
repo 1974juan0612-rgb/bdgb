@@ -3,23 +3,23 @@
 ## Jerarquia
 
 ```
-COLMENA (orquesta panales completos como glifos)
-  ├── PANAL (flujo de trabajo autonomo o dirigido)
-  │     ├── GLIFO: nodo operativo (nativo/externo/panal)
-  │     ├── GLIFO: nodo operativo
-  │     └── ...
-  ├── PANAL (puede ser glifo de otro panal o de la colmena)
-  │     └── ...
-  └── ...
+FAMILIA — grupo de colmenas que comparten un proposito superior
+  ├── COLMENA — orquesta panales completos
+  │     ├── PANAL — flujo de trabajo
+  │     │     ├── GLIFO
+  │     │     └── GLIFO
+  │     └── PANAL
+  └── COLMENA
 ```
 
-Tres niveles:
+Cuatro niveles:
 
 | Nivel | Que es | Analogia |
 |-------|--------|----------|
-| **Colmena** | Orquesta panales completos. Es la estructura superior | La fabrica completa |
-| **Panal** | Flujo de trabajo con proposito definido. Contiene glifos | Una linea de ensamblaje |
-| **Glifo** | Nodo operativo que manipula informacion usando herramientas | Una estacion de trabajo |
+| **Familia** | Grupo de colmenas afines. Estructura superior total | El corporativo |
+| **Colmena** | Orquesta panales completos como glifos | La fabrica |
+| **Panal** | Flujo de trabajo con proposito definido | La linea de ensamblaje |
+| **Glifo** | Nodo operativo que manipula informacion | La estacion de trabajo |
 
 Un **Panal** puede actuar como **Glifo** dentro de otro Panal o de una Colmena. Esto se declara con `"tipo": "panal"` en la lista de glifos.
 
@@ -114,25 +114,30 @@ Esto se define en `glifos[]` con `"tipo": "panal"`:
 
 Una **Colmena** es un nivel superior que no tiene glifos propios: solo orquesta panales completos. Su semilla define que panales la componen y como se relacionan entre ellos.
 
+Una **Familia** es el nivel maximo: agrupa colmenas que comparten un proposito superior. No tiene pipeline propio, solo define que colmenas la integran. La familia no necesita semilla: es puramente organizativa, se define en el registry.
+
 ## Estructura de directorios
 
 ```
 glifos/
   README.md
   registry.json
-  colmenas/                        ← colmenas (opcional)
+  familias/                          ← familias (opcional)
+    familia-ejemplo/                 ← agrupa colmenas afines
+      registry.json
+  colmenas/                          ← colmenas
     colmena-ejemplo/
-      semilla.json                 ← SEMILLA: autoridad de la colmena
-  vigilancia-tendencias/           ← panal
-    semilla.json                   ← SEMILLA: autoridad del panal
+      semilla.json                   ← SEMILLA de la colmena
+  vigilancia-tendencias/             ← panal
+    semilla.json                     ← SEMILLA del panal
     README.md
     glifos/
-      primo/glifo.json             ← config del glifo nativo
-      trend-tracker/               ← codigo del glifo externo
+      primo/glifo.json               ← config del glifo nativo
+      trend-tracker/                 ← codigo del glifo externo
         glifo.json
         trend_tracker.py
         daily/ + weekly/
-  youtube-automator/               ← panal sin semilla aun
+  youtube-automator/                 ← panal sin semilla aun
     config.json
 ```
 
@@ -255,3 +260,9 @@ python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --dai
 | Colmena | Semilla | Panales | Estado |
 |---------|---------|---------|--------|
 | (aun no definida) | — | — | — |
+
+## Familias
+
+| Familia | Colmenas | Proposito |
+|---------|----------|-----------|
+| (aun no definida) | — | — |
