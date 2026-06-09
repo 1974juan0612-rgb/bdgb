@@ -35,7 +35,7 @@
       "panal": "generacion-contenido",
       "rama": "online",
       "tiempo": "dirigido",
-      "descripcion": "Busca tendencias, selecciona por autoridad, genera articulo con IA externa y guarda PDF en escritorio",
+      "descripcion": "Busca tendencias, selecciona por autoridad, genera articulo con IA via API (automatico, sin navegador) y guarda PDF en escritorio",
       "estado": "activo",
       "ruta": "generacion-contenido/",
       "semilla": "generacion-contenido/semilla.json",
@@ -150,7 +150,7 @@
       "id": "content-writer",
       "nombre": "Redactor de Articulos IA",
       "tipo": "externo",
-      "descripcion": "Abre IA en navegador como usuario humano (la IA no sabe que es un glifo). Captura respuesta y guarda PDF en ~/Desktop/guiones/",
+      "descripcion": "Abre ChatGPT en navegador via Chrome DevTools Protocol (CDP), escribe prompt natural, envia, espera y extrae respuesta. La IA no sabe que es un glifo. Sin API key.",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-09",
@@ -167,7 +167,7 @@
       "id": "clipboard-capturer",
       "nombre": "Capturador de Portapapeles",
       "tipo": "externo",
-      "descripcion": "Lee portapapeles con respuesta de IA y guarda PDF en ~/Desktop/guiones/",
+      "descripcion": "Lee respuesta_ia.txt (o portapapeles como fallback) y guarda PDF en ~/Desktop/guiones/",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-09",
@@ -193,7 +193,8 @@
       "pipeline": [
         "trend-fetcher",
         "authority-selector",
-        "content-writer"
+        "content-writer",
+        "clipboard-capturer"
       ],
       "metricas": {
         "ejecuciones": 0,

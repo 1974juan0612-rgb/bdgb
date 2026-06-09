@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Ejecutable del panal generacion-contenido.
-   Pipeline: trend-fetcher -> authority-selector -> content-writer -> clipboard-capturer.
-   Paso 3 es interactivo: abre la IA en el navegador. Tu pegas el prompt y copias la respuesta.
-   Paso 4 lee el portapapeles y guarda PDF.
-   Uso: python run.py"""
+   Pipeline: trend-fetcher -> authority-selector -> content-writer (API IA) -> clipboard-capturer (PDF).
+   Totalmente automatico (sin navegador).
+   Uso: python run.py
+   (requiere BDGB_AI_API_KEY o usar BDGB_AI_MODE=mock)"""
 
 import os, sys, subprocess
 

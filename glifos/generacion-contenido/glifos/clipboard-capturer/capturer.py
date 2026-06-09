@@ -91,17 +91,21 @@ def generate_pdf(topic, content, output_path):
 
 
 def main():
-    print("[clipboard-capturer] Leyendo portapapeles...")
+    print("[clipboard-capturer] Buscando respuesta de IA...")
 
-    text = paste_from_clipboard()
+    resp_file = os.path.join(PANAL_DIR, "respuesta_ia.txt")
+    text = ""
+    if os.path.exists(resp_file):
+        with open(resp_file, "r", encoding="utf-8") as f:
+            text = f.read()
+        header = text.find("\n\n")
+        if header > 0: text = text[header:].strip()
+        print(f"[clipboard-capturer] Leyendo de {resp_file}")
+
     if not text or len(text) < 50:
-        resp_file = os.path.join(PANAL_DIR, "respuesta_ia.txt")
-        if os.path.exists(resp_file):
-            with open(resp_file, "r", encoding="utf-8") as f:
-                text = f.read()
-            header = text.find("\n\n")
-            if header > 0: text = text[header:].strip()
-            print(f"[clipboard-capturer] Leyendo de {resp_file}")
+        text = paste_from_clipboard()
+        if text and len(text) >= 50:
+            print("[clipboard-capturer] Leyendo de portapapeles")
         else:
             print("[clipboard-capturer] Portapapeles vacio. Pega el texto y presiona Enter:")
             try: text = sys.stdin.read()

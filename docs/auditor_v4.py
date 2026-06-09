@@ -132,8 +132,10 @@ story.append(Spacer(1, 0.5*cm))
 story.append(HRFlowable(width="60%", thickness=1.5, color=ACCENT, spaceBefore=4, spaceAfter=8))
 story.append(Paragraph(
     "Rejilla binaria 16x16 con dinamica Kaprekar, cifrado de flujo BDGB-Cipher v1, "
-    "motor semantico, NLP, aprendizaje, sistema de glifos nativos C y agentes externos Python.<br/>"
-    "Jerarquia: Familia &gt; Colmena &gt; Panal &gt; Glifo. Ramas: Online, Local, Hibrida.",
+    "motor semantico, NLP con stopwords + stemming, aprendizaje, sistema de glifos nativos C "
+    "y agentes externos Python.<br/>"
+    "2 panales activos + pipeline automatico via CDP (Chrome DevTools Protocol). "
+    "Sin API key, sin navegador controlado por coordenadas.",
     ParagraphStyle("portada_desc", parent=s_body, fontSize=9, leading=13,
                    alignment=TA_CENTER, textColor=HexColor("#444"))))
 story.append(Spacer(1, 1.5*cm))
@@ -190,8 +192,8 @@ tb([
     [f"Archivos Python", "~2,200 lineas (bridge, GUI, scraper, docs)"],
     [f"Tests", f"{pass_count}/30 PASS"],
     [f"Commits", f"{len(gitlog)}"],
-    [f"Panales activos", "1 (vigilancia-tendencias)"],
-    [f"Glifos registrados", "3 (primo, trend-tracker, youtube-automator)"],
+    [f"Panales activos", "2 (vigilancia-tendencias + generacion-contenido)"],
+    [f"Glifos registrados", "8 (primo, trend-tracker, trend-fetcher, authority-selector, content-writer, clipboard-capturer, generacion-contenido, youtube-automator)"],
     [f"Cifrado", "BDGB-Cipher v1, 128-bit estado, S-box geometrica"],
     [f"Dependencias C", "CERO"],
     [f"Binario", "~152 KB (bdgb.exe)"],
@@ -222,13 +224,13 @@ tb([
     ["Componente", "Descripcion", "Estado"],
     ["Nucleo geometrico", "Grid 16x16, nodos de 4 bytes, propiedades O(1)", "100%"],
     ["Regla dinamica", "Sucesor Kaprekar binario, deteccion de atractores", "100%"],
-    ["Semantica", "Hash index (256 buckets) nodo->concepto", "95%"],
-    ["Grafo conceptos", "Hash index para aristas entre conceptos, dedup", "95%"],
-    ["Busqueda", "Hibrida: semantico + propiedades + atractor", "85%"],
-    ["NLP", "19 terminos fijos + aprendizaje dinamico, stopwords + stemming", "80%"],
-    ["Aprendizaje", "Refuerzo y decaimiento con persistencia a disco", "75%"],
-    ["Glifos nativos", "Sistema de glifos en C compilados en binario", "100%"],
-    ["Sistema glifos", "Arquitectura Panal -> Glifo, semilla.json + Tiempo", "100%"],
+    ["Semantica", "Hash index (256 buckets) nodo->concepto, node_hash inverso O(1)", "100%"],
+    ["Grafo conceptos", "Hash index para aristas entre conceptos, dedup", "100%"],
+    ["Busqueda", "Hibrida: semantico + propiedades + atractor + NLP", "90%"],
+    ["NLP", "stopwords + stemming + 50+ terminos aprendidos", "90%"],
+    ["Aprendizaje", "Refuerzo y decaimiento con persistencia a disco", "85%"],
+    ["Glifos nativos", "Sistema de glifos en C compilados en binario, 2 panales", "100%"],
+    ["Sistema glifos", "Arquitectura Panal -> Glifo, semilla.json + Tiempo (modalidad + fin)", "100%"],
     ["Clasificacion", "Primo/Semilla/Comun, tres ramas online/local/hibrida", "100%"],
     ["BDGB-Cipher v1", "Cifrado de flujo sin dependencias externas", "100%"],
     ["Python bridge", "CLI wrapper para integracion desde Python", "90%"],
@@ -268,7 +270,8 @@ tb([
     ["generacion-contenido", "Nativo (C)", "generacion-contenido", "bdgb --glifo-run generacion-contenido"],
     ["trend-fetcher", "Externo (Python)", "generacion-contenido", "python3 trend_fetcher.py"],
     ["authority-selector", "Externo (Python)", "generacion-contenido", "python3 selector.py"],
-    ["content-writer", "Externo (Python)", "generacion-contenido", "python3 writer.py"],
+    ["content-writer", "Externo (Python)", "generacion-contenido", "python3 writer.py (CDP browser AI)"],
+    ["clipboard-capturer", "Externo (Python)", "generacion-contenido", "python3 capturer.py (PDF)"],
     ["youtube-automator", "Externo (Python)", "sin panal", "pendiente"],
 ], col_widths=[3*cm, 3*cm, 3.5*cm, 4.3*cm])
 
@@ -320,7 +323,10 @@ try:
     story.append(Paragraph(
         "Ejecucion: <font face='Courier'>bdgb --glifo-run generacion-contenido</font> "
         "o como carpeta autonoma: <font face='Courier'>python run.py</font> en "
-        "Desktop/generacion-contenido/. Tiempo: dirigido/encargo (bajo demanda del usuario).",
+        "Desktop/generacion-contenido/. Tiempo: dirigido/encargo (bajo demanda del usuario).<br/>"
+        "IA via CDP (Chrome DevTools Protocol): abre ChatGPT en navegador, escribe prompt natural, "
+        "espera respuesta, la extrae. Sin API key, sin coordenadas de pantalla.<br/>"
+        "Fallback a contenido simulado si CDP no funciona o IA no responde.",
         s_code))
 except: pass
 
@@ -477,7 +483,8 @@ tb([
     ["tests/", "Suite de tests: test_bdgb.c (19 tests)"],
     ["glifos/", "Sistema de glifos: README, registry, panales/"],
     ["glifos/vigilancia-tendencias/", "Primer panal: semilla.json + glifos/primo + glifos/trend-tracker"],
-    ["glifos/youtube-automator/", "Segundo panal (pendiente de definir)"],
+    ["glifos/generacion-contenido/", "Segundo panal: 4 glifos Python, run.py/run.bat, orquestador C"],
+    ["glifos/youtube-automator/", "Tercer panal (pendiente de definir)"],
     ["interface/", "Python: bdgb_bridge.py, bdgb_gui.py (Tkinter)"],
     ["scripts/", "Python: scraper_trends.py"],
     ["docs/", "Scripts de generacion de PDF de auditoria"],
@@ -546,17 +553,21 @@ story.append(Paragraph(
     "&bull; Cifrado novedoso basado unicamente en el modelo BDGB.<br/>"
     "&bull; Puerto Python limpio (bdgb_bridge.py) que evita duplicar logica C.<br/>"
     "&bull; 28 commits en ~1 mes de desarrollo activo.<br/>"
-    "&bull; Segundo panal operativo (generacion-contenido): pipeline 3 glifos, IA externa, PDF en escritorio. "
-    "Funciona como carpeta autonoma.<br/>"
+    "&bull; Segundo panal operativo (generacion-contenido): pipeline 4 glifos, IA via CDP (Chrome DevTools Protocol), "
+    "PDF en escritorio. Funciona como carpeta autonoma. Totalmente automatico, sin API key.<br/>"
+    "&bull; Contenido real de IA: ChatGPT responde con articulos de 800-1200 palabras via CDP, "
+    "la IA no sabe que es un glifo (prompt natural).<br/>"
     "&bull; Documentacion completa: whitepaper (PDF), README, glifos/README, auditorias."
     , s_body))
 
 story.append(Spacer(1, 4))
 story.append(Paragraph("<b>Debilidades y riesgos:</b>", s_body))
 story.append(Paragraph(
-    "&bull; Dos panales activos: vigilancia-tendencias (2 glifos) y generacion-contenido (3 glifos + orquestador nativo).<br/>"
+    "&bull; Dos panales activos: vigilancia-tendencias (2 glifos) y generacion-contenido (4 glifos + orquestador nativo).<br/>"
+    "&bull; CDP requiere Chrome/Edge y matar procesos existentes. Si el usuario tiene Chrome abierto "
+    "con pestañas importantes, se pierden.<br/>"
     "&bull; youtube-automator es placeholder sin implementacion real ni panal asignado.<br/>"
-    "&bull; NLP: 19 terminos base, stopwords filtradas, stemming aplicado. Sin lematizacion.<br/>"
+    "&bull; NLP: stopwords filtradas, stemming aplicado (sufijos españoles). Sin lematizacion completa.<br/>"
     "&bull; Sin usuarios reales fuera del creador. No hay validacion externa del concepto.<br/>"
     "&bull; Sin CI/CD, sin tests automatizados en push, sin integracion continua.<br/>"
     "&bull; El cifrado BDGB-Cipher v1 no ha sido auditado por criptografos profesionales "
@@ -591,17 +602,21 @@ story.append(Spacer(1, 10))
 story.append(HRFlowable(width="100%", thickness=1, color=DARK))
 story.append(Spacer(1, 6))
 story.append(Paragraph(
-    "<b>Veredicto: ?</b><br/><br/>"
-    "<b>? Si, vale la pena seguir.</b> La tecnologia Glifo es genuinamente original "
-    "y tiene una base solida: codigo limpio, zero dependencias, tests pasando, "
-    "documentacion completa. Es una criatura unica.<br/><br/>"
-    "Mejoras recientes: busqueda inversa por nodo O(1) via node_hash, "
-    "stopwords filtradas en tokenizacion, stemming basico de sufijos españoles, "
-    "Tiempo ampliado con modalidad (repetitivo/encargo) y fin. "
-    "La jerarquia completa esta definida: Familia &gt; Colmena &gt; Panal &gt; Glifo. "
-    "Las ramas (Online, Local, Hibrida) organizan los panales por origen de herramientas. "
-    "El nucleo C compila y funciona, los tests pasan.<br/><br/>"
-    "El siguiente paso es aplicar la tecnologia a problemas reales.",
+     "<b>Veredicto: ?</b><br/><br/>"
+     "<b>? Si, vale la pena seguir.</b> La tecnologia Glifo es genuinamente original "
+     "y tiene una base solida: codigo limpio, zero dependencias, tests pasando, "
+     "documentacion completa. Es una criatura unica.<br/><br/>"
+     "Mejoras recientes: busqueda inversa por nodo O(1) via node_hash, "
+     "stopwords filtradas en tokenizacion, stemming basico de sufijos españoles, "
+     "Tiempo ampliado con modalidad (repetitivo/encargo) y fin. "
+     "La jerarquia completa esta definida: Familia &gt; Colmena &gt; Panal &gt; Glifo. "
+     "Las ramas (Online, Local, Hibrida) organizan los panales por origen de herramientas. "
+     "El nucleo C compila y funciona, los tests pasan.<br/><br/>"
+     "El panal generacion-contenido funciona con IA real via CDP (Chrome DevTools Protocol): "
+     "abre ChatGPT, escribe prompt natural, espera respuesta, extrae el articulo y genera PDF. "
+     "Todo automatico, sin API key, sin LLM local.<br/><br/>"
+     "La automatizacion via navegador (CDP) es la pieza que faltaba para cerrar el ciclo: "
+     "tendencias -> seleccion -> IA -> PDF, sin intervencion manual.",
     ParagraphStyle("veredicto", parent=s_body, fontSize=9, leading=13,
                    textColor=DARK, backColor=HexColor("#f0f4ff"),
                    leftIndent=8, rightIndent=8, spaceBefore=4, spaceAfter=4,
@@ -616,22 +631,22 @@ story.append(Paragraph(
 
 tb([
     ["Fase", "Que", "Por que"],
-    ["1. Panal real", "Completar vigilancia-tendencias con "
-     "ejecucion diaria real, reportes funcionales, "
-     "inyeccion automatica en BDGB",
-     "Valida que la maquina funciona en el mundo real"],
-    ["2. Segundo panal", "Definir la semilla de youtube-automator "
+    ["1. Panales estables", "Los dos panales activos funcionan "
+     "con IA real via CDP. "
+     "Siguiente: monitoreo diario autonomo de tendencias.",
+     "Validado: la maquina produce contenido real"],
+    ["2. Tercer panal", "Definir la semilla de youtube-automator "
      "con su Tiempo (dirigido o autonomo) y "
      "sus glifos",
      "Demuestra que la arquitectura es reutilizable"],
     ["3. Prueba cross-platform", "Compilar y ejecutar en Linux "
      "real (no solo #ifdefs)",
      "Confirma que la portabilidad no es teorica"],
-    ["4. Expansion NLP", "Agregar stemming, stopwords, sinonimia "
-     "al modulo NLP",
-     "Mejora la busqueda semantica significativamente"],
+    ["4. CDP robusto", "Manejar sesion expirada, login, "
+     "multiples IAs, tiempo de espera variable",
+     "Hace la automatizacion via navegador mas confiable"],
     ["5. Colmena", "Agrupar vigilancia-tendencias + "
-     "youtube-automator bajo una colmena",
+     "generacion-contenido bajo una colmena",
      "Prueba la jerarquia completa en produccion"],
     ["6. Documentar caso de uso", "Escribir un tutorial de como "
      "crear un panal desde cero",
@@ -640,8 +655,9 @@ tb([
 
 story.append(Spacer(1, 6))
 story.append(Paragraph(
-    "<b>Prioridad inmediata:</b> Fase 1. Que el unico panal que existe funcione "
-    "de verdad en el mundo real. Despues, expandir.",
+    "<b>Prioridad inmediata:</b> Fase 3 (cross-platform) y Fase 4 (CDP robusto). "
+    "Los dos panales ya producen contenido real. Ahora: que funcione en Linux y que sea "
+    "resistente a cambios en la interfaz de ChatGPT.",
     ParagraphStyle("roadmap_note", parent=s_body, fontSize=8.5, leading=11,
                    textColor=DARK, backColor=HexColor("#fef3c7"),
                    leftIndent=6, rightIndent=6, spaceBefore=4, spaceAfter=4,

@@ -2,7 +2,7 @@
   "id": "generacion-contenido",
   "nombre": "Generacion de Contenido desde Tendencias",
   "tipo": "panal",
-  "descripcion": "Busca tendencias en internet, selecciona la mas relevante por autoridad, genera un articulo profundo con IA externa y lo guarda como PDF en el escritorio",
+  "descripcion": "Busca tendencias en internet, selecciona la mas relevante por autoridad, genera un articulo profundo con IA via API (sin navegador, automatico) y lo guarda como PDF en el escritorio",
   "estado": "activo",
   "version": "1.0",
   "rama": "online",
@@ -72,8 +72,8 @@
     {
       "de": "content-writer",
       "a": "clipboard-capturer",
-      "tipo": "interaccion-humana",
-      "flujo": "content-writer copia prompt al portapapeles, usuario pega en IA y copia respuesta. clipboard-capturer lee el portapapeles y guarda PDF"
+      "tipo": "archivo",
+      "flujo": "content-writer escribe respuesta_ia.txt, clipboard-capturer lo lee y genera PDF"
     }
   ],
 
@@ -97,18 +97,18 @@
       {
         "paso": 3,
         "glifo": "content-writer",
-        "accion": "prepare + clipboard + browser",
+        "accion": "cdp-browser",
         "args": [],
         "dependencias": ["authority-selector"],
-        "descripcion": "Copiar prompt al portapapeles, abrir IA en navegador. Usuario pega prompt en IA, copia respuesta"
+        "descripcion": "Abrir ChatGPT en Chrome via CDP, escribir prompt, enviar, extraer respuesta automaticamente"
       },
       {
         "paso": 4,
         "glifo": "clipboard-capturer",
-        "accion": "capture + pdf",
+        "accion": "pdf",
         "args": [],
         "dependencias": ["content-writer"],
-        "descripcion": "Leer portapapeles con respuesta de la IA, guardar como PDF en Desktop/guiones/"
+        "descripcion": "Leer respuesta_ia.txt, generar PDF en Desktop/guiones/"
       }
     ]
   },
@@ -118,13 +118,13 @@
     "criterio_autoridad": "score + volumen de busqueda",
     "formato_salida": "PDF",
     "carpeta_destino": "Desktop/guiones/",
-    "ia_modo": "navegador (como usuario humano, la IA no sabe que es un glifo)",
+    "ia_modo": "navegador CDP (automatico via Chrome DevTools Protocol, o interactivo como fallback)",
     "ia_config": {
-      "url_web": "https://chat.openai.com",
-      "metodo": "abre navegador, pega prompt, copia respuesta",
-      "modos": "automatico (pyautogui) | interactivo | simulado",
+      "url_web": "https://chatgpt.com",
+      "metodo": "CDP WebSocket → JavaScript → prompt → Enter → extraer respuesta",
+      "dependencias": "websocket-client (pip install)",
       "variable_entorno_sitio": "BDGB_AI_WEB_URL",
-      "variable_entorno_modo": "BDGB_AI_MODE (browser | interactive | mock)"
+      "variable_entorno_modo": "BDGB_AI_MODE (browser | mock)"
     }
   },
 
