@@ -154,7 +154,7 @@ Cada panal define su `semilla.json` con esta estructura:
 | `descripcion` | string | Que hace el panal |
 | `estado` | string | `activo` / `inactivo` |
 | `version` | string | Version del schema |
-| `tiempo` | object | Glifo de control: tipo (autonomo/dirigido) + schedule |
+| `tiempo` | object | Control de activacion y terminacion: tipo, modalidad, schedule, fin |
 | `glifos` | array | Lista de glifos del panal |
 | `relaciones` | array | Conexiones entre glifos (de, a, tipo, flujo) |
 | `pipeline` | object | Orden de ejecucion con pasos y dependencias |
@@ -163,18 +163,31 @@ Cada panal define su `semilla.json` con esta estructura:
 
 ### Campo `tiempo`
 
-Define el control de activacion del panal:
+Define el control de activacion **y terminacion** del panal:
 
 ```json
 {
   "tipo": "autonomo | dirigido",
+  "modalidad": "repetitivo | encargo",
   "schedule": {
-    "tipo": "diario | semanal | mensual | una_vez",
+    "tipo": "diario | semanal | mensual",
     "hora": "HH:MM",
     "zona_horaria": "America/Mexico_City"
+  },
+  "fin": {
+    "tipo": "fecha | ejecuciones | indefinido",
+    "fecha": "YYYY-MM-DD",
+    "max_ejecuciones": 100
   }
 }
 ```
+
+| Campo | Descripcion |
+|-------|-------------|
+| `tipo` | `autonomo`=se activa solo. `dirigido`=agente externo lo activa |
+| `modalidad` | `repetitivo`=programado con horario, repite hasta el `fin`. `encargo`=el usuario lo pide, corre una vez, termina al completar |
+| `schedule` | Solo aplica a `repetitivo`. Define el cron |
+| `fin` | Solo aplica a `repetitivo`. Define el termino del ciclo de vida: `fecha` (stop en fecha concreta), `ejecuciones` (stop tras N corridas), `indefinido` (solo stop manual) |
 
 ### Campo `glifos[]`
 

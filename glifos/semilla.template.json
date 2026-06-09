@@ -14,11 +14,19 @@
 
   "tiempo": {
     "tipo": "autonomo | dirigido",
-    "descripcion": "autonomo=se activa por horario. dirigido=lo activa un agente externo",
+    "modalidad": "repetitivo | encargo",
+    "descripcion": "repetitivo=programado con horario, repite hasta fin. encargo=una vez, lo pide el usuario, termina al completar",
     "schedule": {
-      "tipo": "diario | semanal | mensual | una_vez",
+      "comentario": "Solo para repetitivo. Encargo no tiene horario fijo",
+      "tipo": "diario | semanal | mensual",
       "hora": "HH:MM",
       "zona_horaria": "America/Mexico_City"
+    },
+    "fin": {
+      "comentario": "Solo para repetitivo. Cuando termina el ciclo de vida del panal",
+      "tipo": "fecha | ejecuciones | indefinido",
+      "fecha": "YYYY-MM-DD",
+      "max_ejecuciones": 100
     }
   },
 

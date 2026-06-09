@@ -328,7 +328,7 @@ tb([
     ["nombre", "Nombre humano"],
     ["tipo", "Siempre 'panal'"],
     ["rama", "online, local, o hibrida"],
-    ["tiempo", "Control de activacion (autonomo/dirigido)"],
+    ["tiempo", "Control de activacion y terminacion (tipo + modalidad repetitivo/encargo + fin)"],
     ["glifos[]", "Lista de glifos del panal (id, nombre, tipo, entry, actualizable)"],
     ["relaciones[]", "Conexiones entre glifos (de, a, tipo, flujo)"],
     ["pipeline.orden[]", "Orden de ejecucion con pasos y dependencias"],

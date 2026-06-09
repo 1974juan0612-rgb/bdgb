@@ -225,7 +225,7 @@ tb([
     ["Semantica", "Hash index (256 buckets) nodo->concepto", "95%"],
     ["Grafo conceptos", "Hash index para aristas entre conceptos, dedup", "95%"],
     ["Busqueda", "Hibrida: semantico + propiedades + atractor", "85%"],
-    ["NLP", "19 terminos fijos + aprendizaje dinamico, tokenizador", "75%"],
+    ["NLP", "19 terminos fijos + aprendizaje dinamico, stopwords + stemming", "80%"],
     ["Aprendizaje", "Refuerzo y decaimiento con persistencia a disco", "75%"],
     ["Glifos nativos", "Sistema de glifos en C compilados en binario", "100%"],
     ["Sistema glifos", "Arquitectura Panal -> Glifo, semilla.json + Tiempo", "100%"],
@@ -247,7 +247,8 @@ story.append(Paragraph(
     "el siguiente paso para completar el flujo de trabajo. Los glifos se agrupan en "
     "panales, que son flujos de trabajo con un proposito definido. La jerarquia completa "
     "es: Familia &gt; Colmena &gt; Panal &gt; Glifo. Cada panal tiene una semilla "
-    "(semilla.json) que define el pipeline completo, el control de activacion (Tiempo), "
+    "(semilla.json) que define el pipeline completo, el control de activacion (Tiempo) "
+    "con modalidad repetitivo (programado, repite hasta fin) o encargo (una vez, lo pide el usuario), "
     "la actualizabilidad de cada glifo, y los datos extra del panal. "
     "Un panal puede actuar como glifo dentro de otro panal o colmena.", s_body))
 
@@ -567,7 +568,8 @@ story.append(Paragraph(
     "y tiene una base solida: codigo limpio, zero dependencias, tests pasando, "
     "documentacion completa. Es una criatura unica.<br/><br/>"
     "Mejoras recientes: busqueda inversa por nodo O(1) via node_hash, "
-    "stopwords filtradas en tokenizacion, stemming basico de sufijos españoles. "
+    "stopwords filtradas en tokenizacion, stemming basico de sufijos españoles, "
+    "Tiempo ampliado con modalidad (repetitivo/encargo) y fin. "
     "La jerarquia completa esta definida: Familia &gt; Colmena &gt; Panal &gt; Glifo. "
     "Las ramas (Online, Local, Hibrida) organizan los panales por origen de herramientas. "
     "El nucleo C compila y funciona, los tests pasan.<br/><br/>"

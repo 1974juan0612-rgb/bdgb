@@ -13,11 +13,16 @@
 
   "tiempo": {
     "tipo": "autonomo",
-    "descripcion": "Se activa diario a las 08:00 Mexico City para monitorear tendencias",
+    "modalidad": "repetitivo",
+    "descripcion": "Se activa diario a las 08:00 Mexico City. Repite hasta que se desactive manualmente",
     "schedule": {
       "tipo": "diario",
       "hora": "08:00",
       "zona_horaria": "America/Mexico_City"
+    },
+    "fin": {
+      "tipo": "indefinido",
+      "comentario": "Sigue funcionando hasta decision manual del operador"
     }
   },
 
