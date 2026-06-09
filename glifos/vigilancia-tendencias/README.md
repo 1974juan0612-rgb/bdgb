@@ -4,11 +4,11 @@ Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nuc
 
 ## Regla
 
-Ningun glifo funciona fuera de un sistema. Solo los glifos declarados en `glifosenilla.json` existen y pueden ejecutarse.
+Ningun glifo funciona fuera de un panal. Solo los glifos declarados en `semilla.json` existen y pueden ejecutarse.
 
 ## Glifo Maestro
 
-`glifosenilla.json` — define pipeline, relaciones y configuracion del sistema.
+`semilla.json` — define pipeline, Tiempo, relaciones y configuracion del panal.
 
 ## Glifos
 

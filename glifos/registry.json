@@ -1,14 +1,16 @@
 {
-  "version": "3.1",
-  "_desc": "Registro maestro de sistemas y glifos.",
-  "nota": "Primero se define el sistema (flujo de trabajo), luego se crean los glifos que lo componen. Los glifos solo mueven datos; las herramientas (online/locales) crean los archivos.",
-  "sistemas": [
+  "version": "3.2",
+  "_desc": "Registro maestro de panales y glifos.",
+  "nota": "Cada panal tiene una semilla.json que es su autoridad. El Tiempo (glifo de control) determina cuando se activa. Los glifos manipulan informacion usando herramientas como instrumentos.",
+  "panales": [
     {
-      "sistema": "vigilancia-tendencias",
+      "panal": "vigilancia-tendencias",
       "rama": "online",
+      "tiempo": "autonomo",
       "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
       "estado": "activo",
       "ruta": "vigilancia-tendencias/",
+      "semilla": "vigilancia-tendencias/semilla.json",
       "glifos": ["primo", "trend-tracker"]
     }
   ],
@@ -19,8 +21,9 @@
       "tipo": "nativo",
       "descripcion": "Compilado en el binario BDGB. Fetch de tendencias, reporte diario, inyeccion en BDGB.",
       "estado": "activo",
+      "actualizable": false,
       "creado": "2026-06-08",
-      "sistema": "vigilancia-tendencias",
+      "panal": "vigilancia-tendencias",
       "ruta": "vigilancia-tendencias/glifos/primo/",
       "schedule": {
         "tipo": "diario",
@@ -38,8 +41,9 @@
       "tipo": "externo",
       "descripcion": "Script Python. Google Trends + pytrends, reporte JSON/PDF, resumen semanal.",
       "estado": "activo",
+      "actualizable": true,
       "creado": "2026-06-08",
-      "sistema": "vigilancia-tendencias",
+      "panal": "vigilancia-tendencias",
       "ruta": "vigilancia-tendencias/glifos/trend-tracker/",
       "entry": "python3 vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
       "schedule": {
@@ -58,8 +62,9 @@
       "tipo": "externo",
       "descripcion": "Busca tendencias, genera guion con IA, crea video y lo publica.",
       "estado": "inactivo",
+      "actualizable": true,
       "creado": "2026-06-05",
-      "sistema": null,
+      "panal": null,
       "ruta": "youtube-automator/",
       "schedule": {
         "tipo": "semanal",

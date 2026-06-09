@@ -1,19 +1,21 @@
-# Sistema de Glifos
+# Sistema de Glifos — Panal
 
 ## Arquitectura
 
-Cada **Glifo** pertenece a un **Sistema**. Un Sistema es un **flujo de trabajo** con un proposito definido. Los glifos son los nodos operativos.
+Cada **Glifo** pertenece a un **Panal**. Un Panal es un **flujo de trabajo** con un proposito definido. Los glifos son los nodos operativos.
 
-Todo sistema tiene un **glifo maestro** (`glifosenilla.json`) en su raiz que define:
+Todo panal tiene una **Semilla** (`semilla.json`) en su raiz que es la autoridad del panal. Define:
 
 - Los glifos que lo componen
 - Como se relacionan entre ellos
 - El orden de ejecucion (pipeline)
-- Datos extra propios de la tarea del sistema
+- El **Tiempo**: glifo de control que determina cuando se activa el panal
+- Si cada glifo es **actualizable** o no
+- Datos extra propios de la tarea del panal
 
-## Ramas de sistemas
+## Ramas de panales
 
-Cada sistema pertenece a una de tres ramas segun el origen de sus herramientas:
+Cada panal pertenece a una de tres ramas segun el origen de sus herramientas:
 
 | Rama | Herramientas | Ejemplos |
 |------|-------------|----------|
@@ -42,27 +44,47 @@ El glifo no es un transportador pasivo: **manipula activamente el flujo de infor
 
 Esto hace que los glifos sean inherentemente **cross-platform**: la logica de orquestacion es portable, y las herramientas se adaptan al SO.
 
+## El Tiempo: glifo de control
+
+Cada panal tiene un **Tiempo**: el glifo de control que arranca primero y determina cuando se activa el panal. Hay dos tipos:
+
+| Tipo | Descripcion | Ejemplo |
+|------|-------------|---------|
+| **Autonomo** | Se activa por horario propio. Funciona sin intervencion externa | Monitoreo diario de tendencias a las 08:00 |
+| **Dirigido** | Lo activa un agente externo: usuario, programa, o señal de otro panal | Un panal que se ejecuta cuando el usuario abre un programa |
+
+El Tiempo se define en la semilla dentro del bloque `"tiempo"`. Cada panal tiene un Tiempo distinto segun su naturaleza.
+
+## Actualizacion de glifos
+
+Cada glifo declara explicitamente si es **actualizable** (`"actualizable": true/false`) en la semilla:
+
+- `actualizable: false` — El glifo es fijo, no puede modificarse sin cambiar la semilla
+- `actualizable: true` — El glifo puede recibir actualizaciones de su codigo o configuracion sin alterar la semilla
+
+Esto permite tener glifos externos (scripts Python) que se puedan actualizar independientemente, mientras que los glifos nativos (C compilado) son fijos.
+
 ## Independencia y composicion
 
-Cada sistema funciona **independiente** de otros sistemas. Pero un sistema completo puede integrarse como un **glifo** dentro de un sistema superior:
+Cada panal funciona **independiente** de otros panales. Pero un panal completo puede integrarse como un **glifo** dentro de otro panal superior:
 
 ```
-SISTEMA PADRE (produccion-automatica)
+PANAL PADRE (produccion-automatica)
   ├── glifo: scraper (nativo)
   ├── glifo: editor (externo)
-  └── SISTEMA: vigilancia-tendencias ← integrado como glifo
+  └── PANAL: vigilancia-tendencias ← integrado como glifo
         ├── glifo: primo
         └── glifo: trend-tracker
 ```
 
-Esto se define en `glifos[]` con `"tipo": "sistema"`:
+Esto se define en `glifos[]` con `"tipo": "panal"`:
 
 ```json
 {
   "id": "vigilancia-tendencias",
-  "tipo": "sistema",
-  "ref": "glifos/vigilancia-tendencias/glifosenilla.json",
-  "descripcion": "Sistema completo integrado como glifo"
+  "tipo": "panal",
+  "ref": "glifos/vigilancia-tendencias/semilla.json",
+  "descripcion": "Panal completo integrado como glifo"
 }
 ```
 
@@ -72,8 +94,8 @@ Esto se define en `glifos[]` con `"tipo": "sistema"`:
 glifos/
   README.md
   registry.json
-  vigilancia-tendencias/         ← sistema
-    glifosenilla.json            ← MAESTRO: glifos, relaciones, pipeline, datos_sistema
+  vigilancia-tendencias/         ← panal
+    semilla.json                 ← SEMILLA: autoridad del panal
     README.md
     glifos/
       primo/glifo.json           ← config del glifo nativo
@@ -81,28 +103,44 @@ glifos/
         glifo.json
         trend_tracker.py
         daily/ + weekly/
-  youtube-automator/             ← sistema sin glifo maestro aun
+  youtube-automator/             ← panal sin semilla aun
     config.json
 ```
 
-## Esquema de glifosenilla.json
+## Esquema de semilla.json
 
-Cada sistema define su `glifosenilla.json` con esta estructura:
+Cada panal define su `semilla.json` con esta estructura:
 
 | Campo | Tipo | Descripcion |
 |-------|------|-------------|
-| `id` | string | Identificador unico del sistema |
+| `id` | string | Identificador unico del panal |
 | `nombre` | string | Nombre humano |
-| `tipo` | string | Siempre `"sistema"` |
-| `rama` | string | `online` / `local` / `hibrida` — origen de las herramientas |
-| `descripcion` | string | Que hace el sistema |
+| `tipo` | string | Siempre `"panal"` |
+| `rama` | string | `online` / `local` / `hibrida` |
+| `descripcion` | string | Que hace el panal |
 | `estado` | string | `activo` / `inactivo` |
 | `version` | string | Version del schema |
-| `glifos` | array | Lista de glifos que componen el sistema |
+| `tiempo` | object | Glifo de control: tipo (autonomo/dirigido) + schedule |
+| `glifos` | array | Lista de glifos del panal |
 | `relaciones` | array | Conexiones entre glifos (de, a, tipo, flujo) |
-| `pipeline` | array | Orden de ejecucion con dependencias |
-| `datos_sistema` | object | **Datos personalizados** para la tarea del sistema |
+| `pipeline` | object | Orden de ejecucion con pasos y dependencias |
+| `datos_panal` | object | **Datos personalizados** para la tarea del panal |
 | `metricas` | object | Contadores de ejecucion |
+
+### Campo `tiempo`
+
+Define el control de activacion del panal:
+
+```json
+{
+  "tipo": "autonomo | dirigido",
+  "schedule": {
+    "tipo": "diario | semanal | mensual | una_vez",
+    "hora": "HH:MM",
+    "zona_horaria": "America/Mexico_City"
+  }
+}
+```
 
 ### Campo `glifos[]`
 
@@ -110,10 +148,11 @@ Cada glifo tiene:
 
 | Campo | Descripcion |
 |-------|-------------|
-| `id` | Identificador unico en el sistema |
+| `id` | Identificador unico en el panal |
 | `nombre` | Nombre humano |
-| `tipo` | `nativo` (C) o `externo` (Python, etc.) |
+| `tipo` | `nativo` (C), `externo` (Python, etc.), o `panal` (otro panal completo) |
 | `entry` | Comando para ejecutarlo |
+| `actualizable` | `true`/`false` — si puede actualizarse sin cambiar la semilla |
 | `descripcion` | Que hace |
 
 ### Campo `relaciones[]`
@@ -129,59 +168,55 @@ Define como se conectan los glifos:
 }
 ```
 
-### Campo `datos_sistema` (modificable)
+### Campo `datos_panal` (modificable)
 
-Este campo es **personalizable segun la tarea del sistema**. Cada sistema define aqui los datos que necesita:
+Este campo es **personalizable segun la tarea del panal**. Cada panal define aqui los datos que necesita:
 - Fuentes de datos, API keys, keywords, horarios, formatos, rutas, etc.
-- No hay esquema fijo; cada sistema adapta este objeto a su proposito
+- No hay esquema fijo; cada panal adapta este objeto a su proposito
 
 ## Cross-platform
 
-Los glifos solo mueven archivos (copiar, renombrar, leer, escribir). Esta logica funciona **identico** en Windows, Linux, macOS, Android, iOS, tablets y cualquier sistema con un sistema de archivos.
-
-Las herramientas que producen/consumen los datos pueden tener restricciones de plataforma, pero el glifo que las orquesta no. Un sistema hibrido puede tener herramientas locales (Python en PC) y herramientas online (API en la nube) y el glifo conecta ambas sin importar desde donde se ejecute.
-
-Para entornos moviles o embebidos, los glifos nativos (C) se compilan directamente. Los externos requieren el runtime correspondiente (Python, etc.).
+La logica de orquestacion del glifo funciona identico en Windows, Linux, macOS, Android, iOS, tablets y cualquier sistema con un sistema de archivos. El nucleo C compila con C99 en cualquier plataforma. Las herramientas externas (Python, etc.) pueden requerir runtimes especificos, pero el glifo que las orquesta no.
 
 ## Regla fundamental
 
-**Ningun glifo funciona fuera de un sistema.** Aunque se pueda crear por separado (su carpeta y codigo existen), no se ejecuta hasta que se define dentro de un `glifosenilla.json`.
+**Ningun glifo funciona fuera de un panal.** Aunque se pueda crear por separado (su carpeta y codigo existen), no se ejecuta hasta que se define dentro de una `semilla.json`.
 
-Un glifo sin sistema es codigo muerto.
+Un glifo sin panal es codigo muerto.
 
 ## Orden de creacion
 
-1. **Definir el Sistema** — crear carpeta con `glifosenilla.json` (glifos, relaciones, pipeline, datos_sistema)
-2. **Crear los Glifos** — cada uno en `sistema/glifos/<id>/` con su codigo
+1. **Definir el Panal** — crear carpeta con `semilla.json` (tiempo, glifos, relaciones, pipeline, datos_panal)
+2. **Crear los Glifos** — cada uno en `panal/glifos/<id>/` con su codigo
 
-La autoridad es `glifosenilla.json`. Si un glifo no esta ahi declarado, no existe para el sistema.
+La autoridad es `semilla.json`. Si un glifo no esta ahi declarado, no existe para el panal.
 
 ## Clasificacion por naturaleza
 
 | Clase | Que es | Ejemplo |
 |-------|--------|---------|
 | **Primo** | Codigo original del que se crean todos los demas glifos. Es el molde, la masa madre | `src/glifo.c`, `include/glifo.h` |
-| **Semilla** | `glifosenilla.json`. Eje que define y crea un sistema. Sin semilla no hay sistema | `vigilancia-tendencias/glifosenilla.json` |
-| **Comun** | Glifos operativos que ejecutan las tareas dentro de un sistema | `primo` (como glifo comun), `trend-tracker` |
+| **Semilla** | `semilla.json`. Eje que define y crea un panal. Sin semilla no hay panal | `vigilancia-tendencias/semilla.json` |
+| **Comun** | Glifos operativos que ejecutan las tareas dentro de un panal | `primo` (como glifo comun), `trend-tracker` |
 
 ### Subtipos de glifo comun
 
 | Subtipo | Descripcion |
 |---------|-------------|
-| **Nativo** | Compilado en el binario BDGB (`src/glifo.c`). Cero dependencias |
-| **Externo** | Script (Python, etc.) dentro de la carpeta del sistema |
+| **Nativo** | Compilado en el binario BDGB (`src/glifo.c`). Cero dependencias. No actualizable |
+| **Externo** | Script (Python, etc.) dentro de la carpeta del panal. Puede ser actualizable |
 
 ## Comandos
 
 ```bash
-bdgb --glifo-list                    # solo lista glifos dentro de sistemas activos
-bdgb --glifo-run primo               # busca primo en glifosenilla.json del sistema
+bdgb --glifo-list                    # solo lista glifos dentro de panales activos
+bdgb --glifo-run primo               # busca primo en semilla.json del panal
 python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py --daily
 ```
 
-## Sistemas
+## Panales
 
-| Sistema | Glifo Maestro | Glifos | Estado |
-|---------|---------------|--------|--------|
-| `vigilancia-tendencias` | `glifosenilla.json` | `primo`, `trend-tracker` | Activo |
-| `youtube-automator` | (pendiente) | (sin asignar - no funciona) | Inactivo |
+| Panal | Semilla | Tiempo | Glifos | Rama | Estado |
+|-------|---------|--------|--------|------|--------|
+| `vigilancia-tendencias` | `semilla.json` | Autonomo (diario 08:00) | `primo`, `trend-tracker` | online | Activo |
+| `youtube-automator` | (pendiente) | (pendiente) | (sin asignar) | — | Inactivo |

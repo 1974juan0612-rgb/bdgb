@@ -1,0 +1,92 @@
+{
+  "id": "nombre-del-panal",
+  "nombre": "Nombre Humano del Panal",
+  "tipo": "panal",
+  "descripcion": "Describir que flujo de trabajo realiza este panal",
+  "estado": "activo",
+  "version": "1.0",
+  "rama": "online / local / hibrida",
+  "creado": "YYYY-MM-DD",
+
+  "_regla": "Esta semilla es la autoridad del panal. Lo que no esta declarado aqui no existe ni se ejecuta.",
+  "_clasificacion": "Primo=codigo original (src/glifo.c). Semilla=este archivo. Comun=glifos operativos.",
+
+  "tiempo": {
+    "tipo": "autonomo | dirigido",
+    "descripcion": "autonomo=se activa por horario propio. dirigido=lo activa un agente externo (usuario, programa, otro panal)",
+    "schedule": {
+      "tipo": "diario | semanal | mensual | una_vez",
+      "hora": "HH:MM",
+      "zona_horaria": "America/Mexico_City"
+    }
+  },
+
+  "glifos": [
+    {
+      "id": "glifo-1",
+      "nombre": "Nombre del Glifo",
+      "tipo": "nativo",
+      "entry": "bdgb --glifo-run glifo-1",
+      "actualizable": false,
+      "descripcion": "Que hace este glifo"
+    },
+    {
+      "id": "glifo-2",
+      "nombre": "Nombre del Glifo 2",
+      "tipo": "externo",
+      "entry": "python3 glifos/<panal>/glifos/glifo-2/script.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Que hace este glifo"
+    },
+    {
+      "id": "subsistema-ejemplo",
+      "nombre": "Panal Externo Integrado",
+      "tipo": "panal",
+      "ref": "glifos/otro-panal/semilla.json",
+      "actualizable": false,
+      "descripcion": "Panal completo que funciona como glifo dentro de este panal"
+    }
+  ],
+
+  "relaciones": [
+    {
+      "de": "glifo-1",
+      "a": "glifo-2",
+      "tipo": "ejecucion",
+      "flujo": "glifo-1 debe ejecutarse antes que glifo-2, su salida es entrada para glifo-2"
+    }
+  ],
+
+  "pipeline": {
+    "orden": [
+      {
+        "paso": 1,
+        "glifo": "glifo-1",
+        "accion": "accion por defecto",
+        "args": [],
+        "descripcion": "Que hace en este paso"
+      },
+      {
+        "paso": 2,
+        "glifo": "glifo-2",
+        "accion": "--run",
+        "args": ["--run"],
+        "dependencias": ["glifo-1"],
+        "descripcion": "Que hace en este paso"
+      }
+    ]
+  },
+
+  "datos_panal": {
+    "nota": "Este objeto es COMPLETAMENTE PERSONALIZABLE segun la tarea del panal",
+    "ejemplo_clave": "valor"
+  },
+
+  "metricas": {
+    "ejecuciones": 0,
+    "exitosas": 0,
+    "fallidas": 0,
+    "ultima_ejecucion": null
+  }
+}

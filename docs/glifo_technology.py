@@ -173,9 +173,9 @@ tb([
     ["Orquestador", "Invoca herramientas, pasa datos, recibe resultados, decide el siguiente paso"],
     ["Manipula informacion", "Toma datos de entrada, los transforma usando herramientas, produce resultados"],
     ["Orientado al flujo", "Su proposito es completar el workflow completo, no solo transportar"],
-    ["Declarativo", "Su pipeline se define en JSON (glifosenilla.json)"],
+    ["Declarativo", "Su pipeline se define en JSON (semilla.json)"],
     ["Portatil", "Usa herramientas del SO: funciona en Windows, Linux, macOS, Android"],
-    ["Componible", "Varios glifos forman un pipeline; un sistema puede ser glifo de otro sistema mayor"],
+    ["Componible", "Varios glifos forman un pipeline; un panal puede ser glifo de otro panal mayor"],
     ["Estado medible", "Cada glifo cuenta ejecuciones, exitos y fallos"],
 ], col_widths=[3.5*cm, 11.3*cm])
 
@@ -192,10 +192,10 @@ tb([
     ["Primo", "El codigo original del que se derivan todos los demas glifos. "
      "Es el molde, la masa madre. Existe uno solo por implementacion.",
      "src/glifo.c, include/glifo.h"],
-    ["Semilla", "El archivo glifosenilla.json que define y crea un sistema. "
-     "Sin semilla no hay sistema. Es el ADN del flujo de trabajo.",
-     "vigilancia-tendencias/glifosenilla.json"],
-    ["Comun", "Glifos operativos que ejecutan las tareas dentro de un sistema. "
+    ["Semilla", "El archivo semilla.json que define y crea un panal. "
+     "Sin semilla no hay panal. Es el ADN del flujo de trabajo.",
+     "vigilancia-tendencias/semilla.json"],
+    ["Comun", "Glifos operativos que ejecutan las tareas dentro de un panal. "
      "Pueden ser nativos (C) o externos (Python, etc.).",
      "primo, trend-tracker"],
 ], col_widths=[2.5*cm, 8*cm, 4.3*cm])
@@ -289,55 +289,81 @@ story.append(Paragraph(
 story.append(Paragraph("4. Sistema de Funcionamiento", s_h1))
 hr()
 story.append(Paragraph(
-    "Un <b>Sistema</b> es un flujo de trabajo con un proposito definido. "
-    "Contiene glifos, relaciones entre ellos, un pipeline de ejecucion y datos "
-    "propios del sistema. Cada sistema tiene un archivo glifo maestro obligatorio "
-    "llamado <b>glifosenilla.json</b> en su raiz.",
+    "Un <b>Panal</b> es un flujo de trabajo con un proposito definido. "
+    "Contiene glifos, relaciones entre ellos, un pipeline de ejecucion, "
+    "un control de activacion (Tiempo) y datos propios del panal. "
+    "Cada panal tiene una <b>Semilla</b> (`semilla.json`) en su raiz que "
+    "es la autoridad del panal.",
     s_body))
 
-story.append(Paragraph("4.1 Arquitectura Sistema &gt; Glifo", s_h2))
+story.append(Paragraph("4.1 Arquitectura Panal &gt; Glifo", s_h2))
 story.append(Paragraph(
-    "La jerarquia es simple: un Sistema contiene uno o mas Glifos. "
-    "Un Glifo no existe fuera de un Sistema (aunque su codigo pueda crearse aparte, "
-    "no se ejecuta hasta que se declara en un glifosenilla.json).",
+    "La jerarquia es simple: un Panal contiene uno o mas Glifos. "
+    "Un Glifo no existe fuera de un Panal (aunque su codigo pueda crearse aparte, "
+    "no se ejecuta hasta que se declara en una semilla.json).",
     s_body))
 
 story.append(Paragraph("<b>Estructura de directorios:</b>", s_h3))
 story.append(Paragraph(
     "glifos/<br/>"
-    "  registry.json                    &lt;- registro maestro de sistemas y glifos<br/>"
-    "  &lt;sistema&gt;/<br/>"
-    "    glifosenilla.json              &lt;- SEMILLA: define todo el sistema<br/>"
+    "  registry.json                    &lt;- registro maestro de panales y glifos<br/>"
+    "  &lt;panal&gt;/<br/>"
+    "    semilla.json                   &lt;- SEMILLA: define todo el panal<br/>"
     "    glifos/<br/>"
     "      &lt;glifo&gt;/<br/>"
     "        glifo.json                 &lt;- config individual del glifo<br/>"
     "        ...codigo del glifo...",
     s_code))
 
-story.append(Paragraph("4.2 El Archivo glifosenilla.json (La Semilla)", s_h2))
+story.append(Paragraph("4.2 La Semilla (semilla.json)", s_h2))
 story.append(Paragraph(
-    "Este archivo es la autoridad del sistema. Define que glifos existen, "
-    "como se relacionan, en que orden se ejecutan, y los datos propios del sistema. "
-    "Sin este archivo no hay sistema.",
+    "Este archivo es la autoridad del panal. Define que glifos existen, "
+    "como se relacionan, en que orden se ejecutan, el Tiempo de activacion, "
+    "y si cada glifo es actualizable. Sin este archivo no hay panal.",
     s_body))
 
 tb([
     ["Campo", "Descripcion"],
-    ["id", "Identificador unico del sistema"],
+    ["id", "Identificador unico del panal"],
     ["nombre", "Nombre humano"],
-    ["tipo", "Siempre 'sistema'"],
+    ["tipo", "Siempre 'panal'"],
     ["rama", "online, local, o hibrida"],
-    ["glifos[]", "Lista de glifos del sistema (id, nombre, tipo, entry)"],
+    ["tiempo", "Control de activacion (autonomo/dirigido)"],
+    ["glifos[]", "Lista de glifos del panal (id, nombre, tipo, entry, actualizable)"],
     ["relaciones[]", "Conexiones entre glifos (de, a, tipo, flujo)"],
-    ["pipeline[]", "Orden de ejecucion con dependencias"],
-    ["datos_sistema", "Datos personalizados segun la tarea del sistema"],
+    ["pipeline.orden[]", "Orden de ejecucion con pasos y dependencias"],
+    ["datos_panal", "Datos personalizados segun la tarea del panal"],
     ["metricas", "Contadores de ejecucion"],
 ], col_widths=[3.5*cm, 11.3*cm])
 
-story.append(Paragraph("4.3 Pipeline y Relaciones", s_h2))
+story.append(Paragraph("4.3 El Tiempo: glifo de control", s_h2))
+story.append(Paragraph(
+    "Cada panal tiene un <b>Tiempo</b>: el glifo de control que arranca primero "
+    "y determina cuando se activa el panal. Hay dos tipos:",
+    s_body))
+
+tb([
+    ["Tipo", "Descripcion", "Ejemplo"],
+    ["Autonomo", "Se activa por horario propio. "
+     "Funciona sin intervencion externa.",
+     "Monitoreo diario a las 08:00"],
+    ["Dirigido", "Lo activa un agente externo: usuario, "
+     "programa, o senal de otro panal.",
+     "Panal que se ejecuta al abrir un programa"],
+], col_widths=[2.5*cm, 5.5*cm, 6.8*cm])
+
+story.append(Paragraph("4.4 Actualizacion de glifos", s_h2))
+story.append(Paragraph(
+    "Cada glifo declara explicitamente si es <b>actualizable</b> "
+    "(`actualizable: true/false`) en la semilla. "
+    "Un glifo fijo (nativo C) no puede modificarse sin cambiar la semilla. "
+    "Un glifo externo (script Python) puede actualizarse independientemente.",
+    s_body))
+
+story.append(Paragraph("4.5 Pipeline y Relaciones", s_h2))
 story.append(Paragraph(
     "El <b>pipeline</b> define el orden de ejecucion de los glifos. "
-    "Cada paso tiene un orden, un glifo asignado, una accion, argumentos opcionales "
+    "Cada paso tiene un numero, un glifo asignado, una accion, argumentos opcionales "
     "y dependencias. Las <b>relaciones</b> definen conexiones conceptuales entre glifos "
     "(ejecucion, dependencia, datos compartidos).",
     s_body))
@@ -349,9 +375,9 @@ story.append(Paragraph(
     "Paso 3: glifo 'trend-tracker' --weekly (cada 7 dias, depende de primo)",
     s_code))
 
-story.append(Paragraph("4.4 Ramas de Sistemas", s_h2))
+story.append(Paragraph("4.6 Ramas de Panales", s_h2))
 story.append(Paragraph(
-    "Cada sistema pertenece a una de tres ramas segun el origen de sus herramientas:",
+    "Cada panal pertenece a una de tres ramas segun el origen de sus herramientas:",
     s_body))
 
 tb([
@@ -594,9 +620,12 @@ story.append(Paragraph(
     s_body))
 story.append(Paragraph(
     "La clasificacion en tres ramas (Online, Local, Hibrida) organiza "
-    "los sistemas segun la naturaleza de sus herramientas, y las tres "
+    "los panales segun la naturaleza de sus herramientas, y las tres "
     "clases de glifos (Primo, Semilla, Comun) establecen una jerarquia "
-    "conceptual clara desde la implementacion base hasta los nodos operativos.",
+    "conceptual clara desde la implementacion base hasta los nodos operativos. "
+    "El Tiempo (glifo de control) diferencia panales autonomos de dirigidos, "
+    "y el flag actualizable permite que glifos externos se actualicen sin "
+    "modificar la semilla.",
     s_body))
 
 story.append(Spacer(1, 8))

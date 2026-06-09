@@ -31,9 +31,9 @@ int  glifo_list(GlifoDef *out, int max);
 void glifo_mark_success(const char *id);
 void glifo_mark_fail(const char *id);
 
-/* Carga sistemas desde glifos/registry.json + glifosenilla.json.
-   Marca cada glifo registrado con el sistema al que pertenece.
-   Solo los glifos en sistemas activos pueden listarse y ejecutarse. */
+/* Carga panales desde glifos/registry.json + semilla.json.
+   Marca cada glifo registrado con el panal al que pertenece.
+   Solo los glifos en panales activos pueden listarse y ejecutarse. */
 int glifo_load_systems(void);
 
 #endif

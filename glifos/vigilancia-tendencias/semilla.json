@@ -1,14 +1,25 @@
 {
   "id": "vigilancia-tendencias",
   "nombre": "Vigilancia de Tendencias",
-  "tipo": "sistema",
+  "tipo": "panal",
   "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
   "estado": "activo",
   "version": "1.0",
-  "_regla": "Ningun glifo funciona fuera de un sistema. Este archivo es la autoridad: solo los glifos declarados aqui existen y pueden ejecutarse.",
-  "_clasificacion": "Primo=codigo original (src/glifo.c). Semilla=este archivo (glifosenilla.json). Comun=glifos operativos abajo.",
   "rama": "online",
   "creado": "2026-06-08",
+
+  "_regla": "Esta semilla es la autoridad del panal. Lo que no esta declarado aqui no existe ni se ejecuta.",
+  "_clasificacion": "Primo=codigo original (src/glifo.c). Semilla=este archivo. Comun=glifos operativos.",
+
+  "tiempo": {
+    "tipo": "autonomo",
+    "descripcion": "Se activa diario a las 08:00 Mexico City para monitorear tendencias",
+    "schedule": {
+      "tipo": "diario",
+      "hora": "08:00",
+      "zona_horaria": "America/Mexico_City"
+    }
+  },
 
   "glifos": [
     {
@@ -16,6 +27,7 @@
       "nombre": "Glifo Primo",
       "tipo": "nativo",
       "entry": "bdgb --glifo-run primo",
+      "actualizable": false,
       "descripcion": "Fetch via RSS, reporte .txt, inyeccion en BDGB"
     },
     {
@@ -24,6 +36,7 @@
       "tipo": "externo",
       "entry": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
       "lenguaje": "python3",
+      "actualizable": true,
       "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal"
     }
   ],
@@ -37,34 +50,36 @@
     }
   ],
 
-  "pipeline": [
-    {
-      "orden": 1,
-      "glifo": "primo",
-      "accion": "fetch + report + inject",
-      "args": [],
-      "descripcion": "Obtener tendencias via RSS, guardar reporte .txt, inyectar conceptos en BDGB"
-    },
-    {
-      "orden": 2,
-      "glifo": "trend-tracker",
-      "accion": "--daily",
-      "args": ["--daily"],
-      "dependencias": ["primo"],
-      "descripcion": "Reporte JSON + PDF con pytrends, inyeccion adicional en BDGB"
-    },
-    {
-      "orden": 3,
-      "glifo": "trend-tracker",
-      "accion": "--weekly",
-      "args": ["--weekly"],
-      "condicion": "cada 7 dias",
-      "dependencias": ["primo"],
-      "descripcion": "Acumular 7 reportes diarios y generar resumen semanal"
-    }
-  ],
+  "pipeline": {
+    "orden": [
+      {
+        "paso": 1,
+        "glifo": "primo",
+        "accion": "fetch + report + inject",
+        "args": [],
+        "descripcion": "Obtener tendencias via RSS, guardar reporte .txt, inyectar conceptos en BDGB"
+      },
+      {
+        "paso": 2,
+        "glifo": "trend-tracker",
+        "accion": "--daily",
+        "args": ["--daily"],
+        "dependencias": ["primo"],
+        "descripcion": "Reporte JSON + PDF con pytrends, inyeccion adicional en BDGB"
+      },
+      {
+        "paso": 3,
+        "glifo": "trend-tracker",
+        "accion": "--weekly",
+        "args": ["--weekly"],
+        "condicion": "cada 7 dias",
+        "dependencias": ["primo"],
+        "descripcion": "Acumular 7 reportes diarios y generar resumen semanal"
+      }
+    ]
+  },
 
-  "datos_sistema": {
+  "datos_panal": {
     "fuentes": ["google-trends-rss", "pytrends-api"],
     "palabras_clave": ["inteligencia artificial", "pixel art", "video juegos", "musica", "ia"],
     "horario_ejecucion": "08:00 Mexico City",

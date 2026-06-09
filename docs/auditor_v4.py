@@ -108,9 +108,9 @@ gitlog = get_git_log()
 pass_count = testout.count("PASS") if "PASS" in testout else "?"
 fail_count = testout.count("FAIL") if "FAIL" in testout else "0"
 
-# Load glifosenilla.json
+# Load semilla.json
 try:
-    with open(os.path.join(BDGB_ROOT, "glifos", "vigilancia-tendencias", "glifosenilla.json"), encoding="utf-8") as f:
+    with open(os.path.join(BDGB_ROOT, "glifos", "vigilancia-tendencias", "semilla.json"), encoding="utf-8") as f:
         glifosenilla = json.load(f)
 except:
     glifosenilla = {}
@@ -175,7 +175,7 @@ story.append(Paragraph(
 story.append(Paragraph(
     "El sistema de glifos permite automatizar flujos de trabajo (Sistemas) mediante nodos "
     "operativos (Glifos) que pueden ser nativos (compilados en el binario) o externos "
-    "(scripts Python). Cada sistema tiene un glifo maestro (glifosenilla.json) que define "
+    "(scripts Python). Cada panal tiene una semilla (semilla.json) que define "
     "el pipeline completo, las relaciones entre glifos y los datos del sistema.",
     s_body))
 
@@ -187,7 +187,7 @@ tb([
     [f"Archivos Python", "~2,200 lineas (bridge, GUI, scraper, docs)"],
     [f"Tests", f"{pass_count}/30 PASS"],
     [f"Commits", f"{len(gitlog)}"],
-    [f"Sistemas de glifos", "1 activo (vigilancia-tendencias)"],
+    [f"Panales activos", "1 (vigilancia-tendencias)"],
     [f"Glifos registrados", "3 (primo, trend-tracker, youtube-automator)"],
     [f"Cifrado", "BDGB-Cipher v1, 128-bit estado, S-box geometrica"],
     [f"Dependencias C", "CERO"],
@@ -225,7 +225,7 @@ tb([
     ["NLP", "19 terminos fijos + aprendizaje dinamico, tokenizador", "75%"],
     ["Aprendizaje", "Refuerzo y decaimiento con persistencia a disco", "75%"],
     ["Glifos nativos", "Sistema de glifos en C compilados en binario", "100%"],
-    ["Sistema glifos", "Arquitectura Sistema -> Glifo, glifosenilla.json", "100%"],
+    ["Sistema glifos", "Arquitectura Panal -> Glifo, semilla.json + Tiempo", "100%"],
     ["Clasificacion", "Primo/Semilla/Comun, tres ramas online/local/hibrida", "100%"],
     ["BDGB-Cipher v1", "Cifrado de flujo sin dependencias externas", "100%"],
     ["Python bridge", "CLI wrapper para integracion desde Python", "90%"],
@@ -242,33 +242,34 @@ story.append(Paragraph(
     "operativo que manipula informacion usando herramientas como instrumentos. Su logica "
     "es de orquestacion: invoca herramientas, pasa datos, recibe resultados, y decide "
     "el siguiente paso para completar el flujo de trabajo. Los glifos se agrupan en "
-    "Sistemas, que son flujos de trabajo con un proposito definido. Cada sistema tiene "
-    "un glifo maestro obligatorio (glifosenilla.json) que define el pipeline completo, "
-    "las relaciones entre glifos y los datos extra del sistema.", s_body))
+    "panales, que son flujos de trabajo con un proposito definido. Cada panal tiene "
+    "una semilla (semilla.json) que define el pipeline completo, "
+    "el control de activacion (Tiempo), la actualizabilidad de cada glifo, "
+    "y los datos extra del panal.", s_body))
 
 story.append(Paragraph("<b>Arquitectura:</b>", s_body))
 story.append(Paragraph(
-    "glifos/&lt;sistema&gt;/glifosenilla.json -> define pipeline, dependencias y relaciones<br/>"
-    "glifos/&lt;sistema&gt;/glifos/&lt;glifo&gt;/glifo.json -> config individual de cada glifo<br/>"
-    "glifos/registry.json -> registro maestro de todos los sistemas y glifos<br/>"
+    "glifos/&lt;panal&gt;/semilla.json -> define pipeline, Tiempo, relaciones, actualizable<br/>"
+    "glifos/&lt;panal&gt;/glifos/&lt;glifo&gt;/glifo.json -> config individual de cada glifo<br/>"
+    "glifos/registry.json -> registro maestro de todos los panales y glifos<br/>"
     "Ramas: <b>online</b> (herramientas web), <b>local</b> (herramientas locales), <b>hibrida</b> (ambas)<br/>"
-    "Clasificacion: <b>Primo</b> (codigo fuente C), <b>Semilla</b> (glifosenilla.json), <b>Comun</b> (nativo/externo)", s_code))
+    "Clasificacion: <b>Primo</b> (codigo fuente C), <b>Semilla</b> (semilla.json), <b>Comun</b> (nativo/externo)", s_code))
 
 story.append(Paragraph("<b>Glifos registrados:</b>", s_body))
 tb([
-    ["Glifo", "Tipo", "Sistema", "Entry"],
+    ["Glifo", "Tipo", "Panal", "Entry"],
     ["primo", "Nativo (C)", "vigilancia-tendencias", "bdgb --glifo-run primo"],
     ["trend-tracker", "Externo (Python)", "vigilancia-tendencias", "python3 trend_tracker.py --daily"],
-    ["youtube-automator", "Externo (Python)", "sin asignar", "pendiente"],
+    ["youtube-automator", "Externo (Python)", "sin panal", "pendiente"],
 ], col_widths=[3*cm, 3.5*cm, 4*cm, 4.3*cm])
 
-# Pipeline del sistema activo
+# Pipeline del panal activo
 if glifosenilla:
     story.append(Paragraph("<b>Pipeline: vigilancia-tendencias</b>", s_h2))
-    pipe_data = [["Orden", "Glifo", "Accion", "Dependencias"]]
-    for step in glifosenilla.get("pipeline", []):
+    pipe_data = [["Paso", "Glifo", "Accion", "Dependencias"]]
+    for step in glifosenilla.get("pipeline", {}).get("orden", []):
         pipe_data.append([
-            str(step.get("orden", "?")),
+            str(step.get("paso", "?")),
             step.get("glifo", "?"),
             step.get("accion", "?"),
             ", ".join(step.get("dependencias", [])) or "ninguna"
@@ -443,9 +444,9 @@ tb([
     ["crypt/", "Modulo de cifrado BDGB-Cipher + challenge/"],
     ["crypt/challenge/", "Desafio publico: secret.bdgb, README, CHALLENGE_BUNDLE"],
     ["tests/", "Suite de tests: test_bdgb.c (19 tests)"],
-    ["glifos/", "Sistema de glifos: README, registry, sistemas/"],
-    ["glifos/vigilancia-tendencias/", "Primer sistema: glifosenilla.json + glifos/primo + glifos/trend-tracker"],
-    ["glifos/youtube-automator/", "Segundo sistema (pendiente de definir)"],
+    ["glifos/", "Sistema de glifos: README, registry, panales/"],
+    ["glifos/vigilancia-tendencias/", "Primer panal: semilla.json + glifos/primo + glifos/trend-tracker"],
+    ["glifos/youtube-automator/", "Segundo panal (pendiente de definir)"],
     ["interface/", "Python: bdgb_bridge.py, bdgb_gui.py (Tkinter)"],
     ["scripts/", "Python: scraper_trends.py"],
     ["docs/", "Scripts de generacion de PDF de auditoria"],
@@ -508,7 +509,7 @@ story.append(Paragraph(
     "con tipos y funciones claras.<br/>"
     "&bull; Cero dependencias externas en C, incluso en el modulo de cifrado.<br/>"
     "&bull; Sistema de glifos nativos compilados en el binario, sin GPU ni LLM.<br/>"
-    "&bull; Arquitectura Sistema -> Glifo con glifosenilla.json como glue declarativo.<br/>"
+    "&bull; Arquitectura Panal -> Glifo con semilla.json + Tiempo como control de activacion.<br/>"
     f"&bull; {pass_count}/30 tests pasando, cubriendo todos los modulos incluyendo cifrado.<br/>"
     "&bull; Hash indices para busquedas O(1) en semantica y grafo de conceptos.<br/>"
     "&bull; Cifrado novedoso basado unicamente en el modelo BDGB.<br/>"
@@ -520,8 +521,8 @@ story.append(Paragraph(
 story.append(Spacer(1, 4))
 story.append(Paragraph("<b>Debilidades y riesgos:</b>", s_body))
 story.append(Paragraph(
-    "&bull; Un solo sistema activo (vigilancia-tendencias) con solo 2 glifos. Poca masa critica.<br/>"
-    "&bull; youtube-automator es placeholder sin implementacion real ni sistema asignado.<br/>"
+    "&bull; Un solo panal activo (vigilancia-tendencias) con solo 2 glifos. Poca masa critica.<br/>"
+    "&bull; youtube-automator es placeholder sin implementacion real ni panal asignado.<br/>"
     "&bull; NLP limitado: 19 terminos base, sin stemming, sin stopwords, sin lematizacion.<br/>"
     "&bull; Sin usuarios reales fuera del creador. No hay validacion externa del concepto.<br/>"
     "&bull; Sin CI/CD, sin tests automatizados en push, sin integracion continua.<br/>"
@@ -565,8 +566,8 @@ story.append(Paragraph(
     "La tecnologia ya funciona. Ahora necesita casos de uso reales, aplicaciones concretas, "
     "usuarios. Sin eso, es una hermosa maquina sin proposito.<br/><br/>"
     "Recomendacion: pasar de crear la tecnologia a <b>aplicarla</b>. "
-    "Construir sistemas glifo reales que hagan cosas utiles. "
-    "El potencial esta en los sistemas, no en el nucleo. "
+    "Construir panales reales que hagan cosas utiles. "
+    "El potencial esta en los panales, no en el nucleo. "
     "El nucleo ya esta solido.",
     ParagraphStyle("veredicto", parent=s_body, fontSize=9, leading=13,
                    textColor=DARK, backColor=HexColor("#f0f4ff"),
