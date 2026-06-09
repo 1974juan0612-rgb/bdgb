@@ -150,7 +150,7 @@
       "id": "content-writer",
       "nombre": "Redactor de Articulos IA",
       "tipo": "externo",
-      "descripcion": "Usa IA externa para generar articulo profundo y guarda PDF en ~/Desktop/guiones/",
+      "descripcion": "Abre IA en navegador como usuario humano (la IA no sabe que es un glifo). Captura respuesta y guarda PDF en ~/Desktop/guiones/",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-09",

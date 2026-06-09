@@ -95,11 +95,13 @@
     "criterio_autoridad": "score + volumen de busqueda",
     "formato_salida": "PDF",
     "carpeta_destino": "Desktop/guiones/",
+    "ia_modo": "navegador (como usuario humano, la IA no sabe que es un glifo)",
     "ia_config": {
-      "api_url": "https://api.openai.com/v1/chat/completions",
-      "modelo": "gpt-4o-mini",
-      "max_tokens": 2048,
-      "proveedor_alternativo": "Claude / Gemini / llama"
+      "url_web": "https://chat.openai.com",
+      "metodo": "abre navegador, pega prompt, copia respuesta",
+      "modos": "automatico (pyautogui) | interactivo | simulado",
+      "variable_entorno_sitio": "BDGB_AI_WEB_URL",
+      "variable_entorno_modo": "BDGB_AI_MODE (browser | interactive | mock)"
     }
   },
 

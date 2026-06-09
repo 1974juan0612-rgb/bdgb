@@ -89,7 +89,9 @@
 
   "datos_panal": {
     "nota": "Completamente personalizable segun la tarea",
-    "ejemplo_clave": "valor"
+    "ejemplo_clave": "valor",
+    "ia_modo": "navegador | api | mock",
+    "ia_nota": "navegador=la IA se usa como usuario humano a traves del browser. api=llamada directa. mock=simulado"
   },
 
   "metricas": {
