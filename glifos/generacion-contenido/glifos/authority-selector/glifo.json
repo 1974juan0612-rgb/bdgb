@@ -1,0 +1,12 @@
+{
+  "id": "authority-selector",
+  "nombre": "Selector por Autoridad",
+  "tipo": "externo",
+  "lenguaje": "python3",
+  "descripcion": "Lee tendencias.json, selecciona la tendencia con mayor autoridad (score + volumen), guarda tema_seleccionado.json.",
+  "entry": "python3 glifos/generacion-contenido/glifos/authority-selector/selector.py",
+  "estado": "activo",
+  "panal": "generacion-contenido",
+  "actualizable": true,
+  "dependencias": ["trend-fetcher"]
+}

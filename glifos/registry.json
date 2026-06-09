@@ -30,6 +30,16 @@
       "ruta": "vigilancia-tendencias/",
       "semilla": "vigilancia-tendencias/semilla.json",
       "glifos": ["primo", "trend-tracker"]
+    },
+    {
+      "panal": "generacion-contenido",
+      "rama": "online",
+      "tiempo": "dirigido",
+      "descripcion": "Busca tendencias, selecciona por autoridad, genera articulo con IA externa y guarda PDF en escritorio",
+      "estado": "activo",
+      "ruta": "generacion-contenido/",
+      "semilla": "generacion-contenido/semilla.json",
+      "glifos": ["trend-fetcher", "authority-selector", "content-writer", "generacion-contenido"]
     }
   ],
   "glifos": [
@@ -100,6 +110,78 @@
         "ejecuciones": 0,
         "ultimo_rank": null,
         "mejor_video_visitas": null
+      }
+    },
+    {
+      "id": "trend-fetcher",
+      "nombre": "Buscador de Tendencias",
+      "tipo": "externo",
+      "descripcion": "Obtiene tendencias de internet via Google Trends RSS + pytrends",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/trend-fetcher/",
+      "entry": "python3 generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
+      "metricas": {
+        "ejecuciones": 0,
+        "exitosas": 0,
+        "fallidas": 0
+      }
+    },
+    {
+      "id": "authority-selector",
+      "nombre": "Selector por Autoridad",
+      "tipo": "externo",
+      "descripcion": "Elige la tendencia de mayor autoridad (score + volumen)",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/authority-selector/",
+      "entry": "python3 generacion-contenido/glifos/authority-selector/selector.py",
+      "dependencias": ["trend-fetcher"],
+      "metricas": {
+        "ejecuciones": 0,
+        "selecciones": 0
+      }
+    },
+    {
+      "id": "content-writer",
+      "nombre": "Redactor de Articulos IA",
+      "tipo": "externo",
+      "descripcion": "Usa IA externa para generar articulo profundo y guarda PDF en ~/Desktop/guiones/",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/content-writer/",
+      "entry": "python3 generacion-contenido/glifos/content-writer/writer.py",
+      "dependencias": ["authority-selector"],
+      "metricas": {
+        "ejecuciones": 0,
+        "articulos_generados": 0
+      }
+    },
+    {
+      "id": "generacion-contenido",
+      "nombre": "Orquestador Generacion de Contenido",
+      "tipo": "nativo",
+      "descripcion": "Orquestador nativo C que ejecuta el pipeline completo del panal en secuencia",
+      "estado": "activo",
+      "actualizable": false,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "src/glifo.c",
+      "pipeline": [
+        "trend-fetcher",
+        "authority-selector",
+        "content-writer"
+      ],
+      "metricas": {
+        "ejecuciones": 0,
+        "exitosas": 0,
+        "fallidas": 0
       }
     }
   ]

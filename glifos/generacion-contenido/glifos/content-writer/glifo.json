@@ -1,0 +1,12 @@
+{
+  "id": "content-writer",
+  "nombre": "Redactor de Articulos IA",
+  "tipo": "externo",
+  "lenguaje": "python3",
+  "descripcion": "Usa IA externa (OpenAI, Claude, etc.) para generar un articulo profundo sobre el tema seleccionado y lo guarda como PDF en ~/Desktop/guiones/",
+  "entry": "python3 glifos/generacion-contenido/glifos/content-writer/writer.py",
+  "estado": "activo",
+  "panal": "generacion-contenido",
+  "actualizable": true,
+  "dependencias": ["authority-selector"]
+}

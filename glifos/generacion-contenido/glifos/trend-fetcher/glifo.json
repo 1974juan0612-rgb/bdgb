@@ -1,0 +1,11 @@
+{
+  "id": "trend-fetcher",
+  "nombre": "Buscador de Tendencias",
+  "tipo": "externo",
+  "lenguaje": "python3",
+  "descripcion": "Obtiene tendencias de internet via Google Trends RSS + pytrends. Escribe tendencias.json para el siguiente glifo.",
+  "entry": "python3 glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
+  "estado": "activo",
+  "panal": "generacion-contenido",
+  "actualizable": true
+}

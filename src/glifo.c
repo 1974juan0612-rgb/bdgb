@@ -167,6 +167,44 @@ void glifo_mark_fail(const char *id) {
 }
 
 /* ============================================================
+ *   GLIFO GENERACION-CONTENIDO — Orquestador del panal
+ *   Ejecuta pipeline completo: trend-fetcher -> authority-selector -> content-writer
+ * ============================================================ */
+
+static int run_python_script(const char *rel_path) {
+    const char *root = getenv("BDGB_ROOT");
+    if (!root) root = ".";
+    const char *pye = getenv("BDGB_PYTHON");
+    if (!pye) pye = "python";
+    char full[512];
+    snprintf(full, sizeof(full), "%s \"%s/%s\"", pye, root, rel_path);
+    printf("[GLIFO-GC] Ejecutando: %s\n", rel_path);
+    char buf[4096] = {0};
+    int r = run_captured(full, buf, sizeof(buf));
+    printf("%s", buf);
+    return r;
+}
+
+int glifo_generacion_contenido_run(const char *args) {
+    (void)args;
+    printf("[GLIFO-GC] ===== Panal: Generacion de Contenido =====\n");
+
+    int r;
+
+    r = run_python_script("glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py");
+    if (r != 0) { printf("[GLIFO-GC] ERROR: trend-fetcher fallo (codigo %d)\n", r); return -1; }
+
+    r = run_python_script("glifos/generacion-contenido/glifos/authority-selector/selector.py");
+    if (r != 0) { printf("[GLIFO-GC] ERROR: authority-selector fallo (codigo %d)\n", r); return -1; }
+
+    r = run_python_script("glifos/generacion-contenido/glifos/content-writer/writer.py");
+    if (r != 0) { printf("[GLIFO-GC] ERROR: content-writer fallo (codigo %d)\n", r); return -1; }
+
+    printf("[GLIFO-GC] ===== Pipeline completado exitosamente =====\n");
+    return 0;
+}
+
+/* ============================================================
  *   GLIFO PRIMO — Trend Tracker nativo en C
  * ============================================================ */
 
@@ -312,6 +350,7 @@ int glifo_primo_run(const char *args) {
 int glifo_init(void) {
     glifo_count = 0;
     glifo_register("primo", "Glifo Primo - Trend Tracker", glifo_primo_run);
+    glifo_register("generacion-contenido", "Orquestador Generacion de Contenido", glifo_generacion_contenido_run);
     glifo_load_systems();
     return glifo_count;
 }
