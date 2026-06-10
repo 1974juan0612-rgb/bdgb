@@ -13,6 +13,7 @@ SCRIPTS = [
     ("authority-selector", "glifos/authority-selector/selector.py"),
     ("content-writer",     "glifos/content-writer/writer.py"),
     ("clipboard-capturer", "glifos/clipboard-capturer/capturer.py"),
+    ("cleanup",            "glifos/cleanup/cleaner.py"),
 ]
 
 def main():

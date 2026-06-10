@@ -53,6 +53,15 @@
       "lenguaje": "python3",
       "actualizable": true,
       "descripcion": "Lee el portapapeles con la respuesta de la IA y la guarda como PDF en Desktop/guiones/"
+    },
+    {
+      "id": "cleanup",
+      "nombre": "Limpiador de Recursos",
+      "tipo": "externo",
+      "entry": "python3 glifos/generacion-contenido/glifos/cleanup/cleaner.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Cierra Chrome/Edge lanzados por content-writer, libera puertos CDP, elimina archivos temporales del pipeline"
     }
   ],
 
@@ -74,6 +83,12 @@
       "a": "clipboard-capturer",
       "tipo": "archivo",
       "flujo": "content-writer escribe respuesta_ia.txt, clipboard-capturer lo lee y genera PDF"
+    },
+    {
+      "de": "clipboard-capturer",
+      "a": "cleanup",
+      "tipo": "cierre",
+      "flujo": "cleanup cierra Chrome/Edge, libera puertos CDP, elimina archivos temporales del pipeline"
     }
   ],
 
@@ -109,6 +124,14 @@
         "args": [],
         "dependencias": ["content-writer"],
         "descripcion": "Leer respuesta_ia.txt, generar PDF en Desktop/guiones/"
+      },
+      {
+        "paso": 5,
+        "glifo": "cleanup",
+        "accion": "clean",
+        "args": [],
+        "dependencias": ["clipboard-capturer"],
+        "descripcion": "Cerrar Chrome/Edge abiertos por content-writer, liberar puertos CDP, limpiar temporales"
       }
     ]
   },

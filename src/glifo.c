@@ -203,6 +203,9 @@ int glifo_generacion_contenido_run(const char *args) {
     r = run_python_script("glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py");
     if (r != 0) { printf("[GLIFO-GC] ERROR: clipboard-capturer fallo (codigo %d)\n", r); return -1; }
 
+    r = run_python_script("glifos/generacion-contenido/glifos/cleanup/cleaner.py");
+    if (r != 0) { printf("[GLIFO-GC] WARN: cleanup fallo (codigo %d)\n", r); }
+
     printf("[GLIFO-GC] ===== Pipeline completado exitosamente =====\n");
     return 0;
 }

@@ -39,7 +39,7 @@
       "estado": "activo",
       "ruta": "generacion-contenido/",
       "semilla": "generacion-contenido/semilla.json",
-      "glifos": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "generacion-contenido"]
+      "glifos": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup", "generacion-contenido"]
     }
   ],
   "glifos": [
@@ -181,6 +181,23 @@
       }
     },
     {
+      "id": "cleanup",
+      "nombre": "Limpiador de Recursos",
+      "tipo": "externo",
+      "descripcion": "Cierra Chrome/Edge abiertos por content-writer, libera puertos CDP, elimina temporales del pipeline",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-10",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/cleanup/",
+      "entry": "python3 generacion-contenido/glifos/cleanup/cleaner.py",
+      "dependencias": ["clipboard-capturer"],
+      "metricas": {
+        "ejecuciones": 0,
+        "cierres": 0
+      }
+    },
+    {
       "id": "generacion-contenido",
       "nombre": "Orquestador Generacion de Contenido",
       "tipo": "nativo",
@@ -194,7 +211,8 @@
         "trend-fetcher",
         "authority-selector",
         "content-writer",
-        "clipboard-capturer"
+        "clipboard-capturer",
+        "cleanup"
       ],
       "metricas": {
         "ejecuciones": 0,
