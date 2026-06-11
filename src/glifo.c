@@ -169,6 +169,98 @@ void glifo_mark_fail(const char *id) {
 }
 
 /* ============================================================
+ *   BIBLIOTECARIO — setup de recursos, credenciales y permisos
+ * ============================================================ */
+
+static int bibliotecario_setup(const char *panal, JsonValue *semilla) {
+    JsonValue *biblio = json_get(semilla, "bibliotecario");
+    if (!biblio) return 0;
+
+    const char *root = getenv("BDGB_ROOT");
+    if (!root) root = ".";
+
+    int warnings = 0;
+
+    /* Verificar recursos (archivos) */
+    JsonValue *recursos = json_get(biblio, "recursos");
+    if (recursos) {
+        int n = json_len(recursos);
+        for (int i = 0; i < n; i++) {
+            const char *recurso = json_string(json_idx(recursos, i));
+            if (!recurso) continue;
+            char path[MAX_PATH_LEN];
+            snprintf(path, sizeof(path), "%s/glifos/%s/%s", root, panal, recurso);
+            FILE *f = fopen(path, "rb");
+            if (!f) {
+                printf("[BIBLIOTECARIO] WARN: recurso no encontrado: %s\n", path);
+                warnings++;
+            } else {
+                printf("[BIBLIOTECARIO] OK recurso: %s\n", path);
+                fclose(f);
+            }
+        }
+    }
+
+    /* Verificar credenciales (variables de entorno) */
+    JsonValue *creds = json_get(biblio, "credenciales");
+    if (creds) {
+        int nc = json_len(creds);
+        /* credenciales es un objeto clave -> valor */
+        for (int i = 0; i < creds->count; i++) {
+            JsonValue *v = creds->pairs[i].value;
+            if (!v) continue;
+            JsonValue *tipo_v = json_get(v, "tipo");
+            if (!tipo_v || strcmp(json_string(tipo_v), "env") != 0) continue;
+            JsonValue *keys_v = json_get(v, "key");
+            if (keys_v && json_string(keys_v)) {
+                const char *val = getenv(json_string(keys_v));
+                if (!val || !val[0]) {
+                    printf("[BIBLIOTECARIO] WARN: env '%s' no definida\n", json_string(keys_v));
+                    warnings++;
+                }
+            }
+            JsonValue *keys_arr = json_get(v, "keys");
+            if (keys_arr) {
+                for (int k = 0; k < json_len(keys_arr); k++) {
+                    const char *kname = json_string(json_idx(keys_arr, k));
+                    if (!kname) continue;
+                    const char *val = getenv(kname);
+                    if (!val || !val[0]) {
+                        printf("[BIBLIOTECARIO] WARN: env '%s' no definida\n", kname);
+                        warnings++;
+                    }
+                }
+            }
+        }
+    }
+
+    /* Verificar permisos (paths) */
+    JsonValue *permisos = json_get(biblio, "permisos");
+    if (permisos) {
+        int np = json_len(permisos);
+        for (int i = 0; i < np; i++) {
+            const char *perm = json_string(json_idx(permisos, i));
+            if (!perm) continue;
+            if (strncmp(perm, "write:", 6) == 0 || strncmp(perm, "read:", 5) == 0) {
+                /* solo informativo */
+                printf("[BIBLIOTECARIO] permiso: %s\n", perm);
+            }
+        }
+    }
+
+    if (warnings > 0)
+        printf("[BIBLIOTECARIO] %d advertencia(s) — continuando\n", warnings);
+    else
+        printf("[BIBLIOTECARIO] todo OK\n");
+
+    return 0;
+}
+
+static void bibliotecario_teardown(void) {
+    printf("[BIBLIOTECARIO] teardown\n");
+}
+
+/* ============================================================
  *   ORQUESTADOR GENERICO — lee semilla.json, ejecuta pipeline
  * ============================================================ */
 
@@ -180,8 +272,6 @@ static int run_command(const char *cmd) {
     return r;
 }
 
-/* Busca un glifo por id en el array "glifos" de semilla.json.
-   Devuelve el entry como string (no debe ser freed). */
 static const char *find_entry(JsonValue *semilla, const char *glifo_id) {
     JsonValue *glifos_arr = json_get(semilla, "glifos");
     if (!glifos_arr) return NULL;
@@ -199,19 +289,15 @@ static const char *find_entry(JsonValue *semilla, const char *glifo_id) {
     return NULL;
 }
 
-/* Lee el root path desde BDGB_ROOT o pwd */
 static const char *get_root(void) {
     const char *r = getenv("BDGB_ROOT");
     return r ? r : ".";
 }
 
-/* Construye la ruta completa: <root>/glifos/<panal>/semilla.json */
 static void build_semilla_path(char *out, size_t outsz, const char *panal) {
     snprintf(out, outsz, "%s/glifos/%s/semilla.json", get_root(), panal);
 }
 
-/* Ejecuta un paso del pipeline.
-   Returns: 0 = OK, -1 = ERROR (stop pipeline), -2 = SKIP (continue) */
 static int ejecutar_paso(JsonValue *semilla, const char *glifo_id,
                          const char *args_extra, int warn_on_fail) {
     const char *entry = find_entry(semilla, glifo_id);
@@ -238,10 +324,25 @@ static int ejecutar_paso(JsonValue *semilla, const char *glifo_id,
     return GLIFO_OK;
 }
 
+/* Encuentra el paso cleanup dentro del pipeline (por id que contenga "cleanup").
+   Devuelve el indice o -1 si no se encuentra. */
+static int find_cleanup_step(char step_ids[][64], int step_count) {
+    for (int i = 0; i < step_count; i++)
+        if (strstr(step_ids[i], "cleanup")) return i;
+    return -1;
+}
+
 /* Orquestador generico.
    Args: nombre del panal (e.g. "generacion-contenido", "vigilancia-tendencias").
    Lee semilla.json del panal y ejecuta pipeline segun config.pipeline
-   (array simple) o pipeline.orden (array detallado). */
+   (array simple) o pipeline.orden (array detallado).
+
+   Comportamiento:
+   1. Ejecuta bibliotecario_setup (recursos, credenciales, permisos)
+   2. Ejecuta pasos del pipeline secuencialmente
+   3. Si un paso falla (ERROR), registra el error pero continua
+   4. Al final, siempre ejecuta cleanup (finally logic)
+   5. Retorna GLIFO_ERR si hubo al menos un error (no cleanup) */
 int glifo_pipeline_run(const char *args) {
     const char *panal = args;
     if (!panal || !panal[0]) panal = "generacion-contenido";
@@ -257,7 +358,10 @@ int glifo_pipeline_run(const char *args) {
         return GLIFO_ERR;
     }
 
-    /* Determinar orden del pipeline */
+    /* ---- Bibliotecario setup ---- */
+    bibliotecario_setup(panal, semilla);
+
+    /* ---- Determinar orden del pipeline ---- */
     int step_count = 0;
     char step_ids[32][64];
     char step_args[32][128];
@@ -294,7 +398,6 @@ int glifo_pipeline_run(const char *args) {
                 strncpy(step_ids[step_count], json_string(gv), 63);
                 step_ids[step_count][63] = 0;
 
-                /* args opcionales */
                 JsonValue *av = json_get(step, "args");
                 if (av) {
                     char buf[128] = {0};
@@ -312,7 +415,6 @@ int glifo_pipeline_run(const char *args) {
                     step_args[step_count][0] = 0;
                 }
 
-                /* warn_on_fail si glifo_id contiene "cleanup" o accion contiene "clean" */
                 if (strstr(step_ids[step_count], "cleanup")) {
                     step_warn[step_count] = 1;
                 } else {
@@ -324,7 +426,6 @@ int glifo_pipeline_run(const char *args) {
 
                 step_count++;
             }
-            /* ultimo paso siempre warn */
             if (step_count > 0) step_warn[step_count - 1] = 1;
         }
     }
@@ -349,12 +450,22 @@ int glifo_pipeline_run(const char *args) {
     if (step_count == 0) {
         printf("[PIPELINE] ERROR: no se encontraron pasos en semilla.json\n");
         json_free(semilla);
+        bibliotecario_teardown();
         return GLIFO_ERR;
     }
 
-    /* Ejecutar pipeline */
-    int total_ok = 0, total_warn = 0, total_err = 0;
+    /* ---- Identificar cleanup para finally logic ---- */
+    int cleanup_idx = find_cleanup_step(step_ids, step_count);
+    int has_cleanup = (cleanup_idx >= 0);
+
+    /* ---- Ejecutar pipeline con finally (try/finally) ---- */
+    int first_error = GLIFO_OK;
+    int total_ok = 0, total_warn = 0;
+
     for (int i = 0; i < step_count; i++) {
+        /* saltar cleanup si se ejecutara como finally */
+        if (has_cleanup && i == cleanup_idx) continue;
+
         printf("[PIPELINE] Paso %d/%d: %s\n", i + 1, step_count, step_ids[i]);
         int r = ejecutar_paso(semilla, step_ids[i], step_args[i], step_warn[i]);
         if (r == GLIFO_OK) {
@@ -362,18 +473,35 @@ int glifo_pipeline_run(const char *args) {
         } else if (r == GLIFO_SALTAR) {
             total_warn++;
         } else {
-            total_err++;
-            json_free(semilla);
-            printf("[PIPELINE] ===== Pipeline fallido en paso %d (%s) =====\n",
-                   i + 1, step_ids[i]);
-            return GLIFO_ERR;
+            if (first_error == GLIFO_OK) first_error = GLIFO_ERR;
+            printf("[PIPELINE] ERROR: paso '%s' fallo, continuando al finally\n", step_ids[i]);
+            /* no break — seguir para ejecutar finally */
         }
     }
 
+    /* ---- FINALLY: cleanup siempre se ejecuta ---- */
+    if (has_cleanup) {
+        printf("[PIPELINE] FINALLY: ejecutando cleanup\n");
+        int r = ejecutar_paso(semilla, step_ids[cleanup_idx],
+                              step_args[cleanup_idx], 1);
+        if (r == GLIFO_OK) total_ok++;
+        else total_warn++;
+    }
+
+    /* ---- Bibliotecario teardown ---- */
+    bibliotecario_teardown();
+
     json_free(semilla);
-    printf("[PIPELINE] ===== Pipeline completado: %d OK, %d WARN, %d ERR =====\n",
-           total_ok, total_warn, total_err);
-    return total_err > 0 ? GLIFO_ERR : GLIFO_OK;
+
+    if (first_error != GLIFO_OK) {
+        printf("[PIPELINE] ===== Pipeline fallido: %d OK, %d WARN =====\n",
+               total_ok, total_warn);
+        return GLIFO_ERR;
+    }
+
+    printf("[PIPELINE] ===== Pipeline completado: %d OK, %d WARN =====\n",
+           total_ok, total_warn);
+    return GLIFO_OK;
 }
 
 /* ============================================================

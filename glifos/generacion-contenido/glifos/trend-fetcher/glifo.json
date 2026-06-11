@@ -2,6 +2,7 @@
   "id": "trend-fetcher",
   "nombre": "Buscador de Tendencias",
   "tipo": "externo",
+  "glifo_principal": false,
   "descripcion": "Obtiene tendencias de internet (Google Trends RSS + pytrends). Primer paso del pipeline.",
   "entry": "python3 glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
   "actualizable": true,
@@ -11,6 +12,16 @@
     {"archivo": "pipeline_state/tendencias.json", "formato": "json", "descripcion": "Lista de tendencias con score y categoria"}
   ],
   "dependencias": [],
+  "tiempo": {
+    "modalidad": "dirigido",
+    "inicio": {"trigger": "manual", "via": "orquestador pipeline"},
+    "fin": {"tipo": "senal", "descripcion": "Escribe pipeline_state/tendencias.json, senal para authority-selector"}
+  },
+  "bibliotecario": {
+    "recursos": [],
+    "credenciales": {},
+    "permisos": ["write:pipeline_state"]
+  },
   "config": {
     "fuentes": ["google-trends-rss", "pytrends-api", "mock-internet"],
     "max_tendencias": 15

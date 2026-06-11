@@ -2,6 +2,7 @@
   "id": "generacion-contenido",
   "nombre": "Orquestador Generacion de Contenido",
   "tipo": "nativo",
+  "glifo_principal": true,
   "descripcion": "Orquestador generico compilado en binario BDGB. Lee semilla.json del panal, ejecuta pipeline declarado en config.pipeline o pipeline.orden secuencialmente. Cada paso ejecuta su entry, maneja errores como ERROR o WARN (cleanup).",
   "entry": "bdgb --glifo-run generacion-contenido",
   "actualizable": false,
@@ -9,6 +10,19 @@
   "inputs": [],
   "outputs": [],
   "dependencias": [],
+  "tiempo": {
+    "modalidad": "dirigido",
+    "inicio": {"trigger": "manual", "via": "bdgb --glifo-run generacion-contenido"},
+    "fin": {"tipo": "senal", "descripcion": "Pipeline completado, cleanup ejecutado, proceso termina"}
+  },
+  "bibliotecario": {
+    "recursos": ["prompts/note_wall.md", "prompts/prompt_writer.txt"],
+    "credenciales": {
+      "note_wall": {"tipo": "env", "keys": ["NOTEWALL_EMAIL", "NOTEWALL_PASS"]},
+      "elevenlabs": {"tipo": "env", "key": "ELEVENLABS_API_KEY"}
+    },
+    "permisos": ["read:glifos/generacion-contenido", "exec:python3", "exec:chrome"]
+  },
   "config": {
     "pipeline": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"],
     "tipo_orquestacion": "generica — lee semilla.json del panal",

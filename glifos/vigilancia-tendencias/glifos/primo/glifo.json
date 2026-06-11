@@ -2,6 +2,7 @@
   "id": "primo",
   "nombre": "Glifo Primo",
   "tipo": "nativo",
+  "glifo_principal": true,
   "descripcion": "Primer glifo compilado en binario BDGB. Fetch de tendencias via RSS, reporte diario, inyeccion en BDGB.",
   "entry": "bdgb --glifo-run primo",
   "actualizable": false,
@@ -12,6 +13,16 @@
     {"archivo": "pipeline_state/reporte_primo.txt", "formato": "txt", "descripcion": "Reporte diario en texto"}
   ],
   "dependencias": [],
+  "tiempo": {
+    "modalidad": "autonomo",
+    "inicio": {"trigger": "schedule", "via": "diario 08:00 Mexico City"},
+    "fin": {"tipo": "indefinido", "descripcion": "Se ejecuta diariamente hasta desactivacion manual"}
+  },
+  "bibliotecario": {
+    "recursos": [],
+    "credenciales": {},
+    "permisos": ["write:pipeline_state", "write:glifos/vigilancia-tendencias/glifos/trend-tracker/daily"]
+  },
   "config": {
     "fuente": "google-trends-rss",
     "horario": "diario 08:00"

@@ -14,19 +14,15 @@
 
   "tiempo": {
     "tipo": "autonomo | dirigido",
-    "modalidad": "repetitivo | encargo",
-    "descripcion": "repetitivo=programado con horario, repite hasta fin. encargo=una vez, lo pide el usuario, termina al completar",
-    "schedule": {
-      "comentario": "Solo para repetitivo. Encargo no tiene horario fijo",
-      "tipo": "diario | semanal | mensual",
-      "hora": "HH:MM",
-      "zona_horaria": "America/Mexico_City"
+    "modalidad": "repetitivo | encargo | autonomo",
+    "descripcion": "repetitivo=programado con horario, repite hasta fin. encargo=una vez, lo pide el usuario. autonomo=sin intervencion",
+    "inicio": {
+      "trigger": "manual | schedule | dependencia",
+      "via": "comando / horario / archivo senal"
     },
     "fin": {
-      "comentario": "Solo para repetitivo. Cuando termina el ciclo de vida del panal",
-      "tipo": "fecha | ejecuciones | indefinido",
-      "fecha": "YYYY-MM-DD",
-      "max_ejecuciones": 100
+      "tipo": "duracion | senal | cleanup | indefinido",
+      "descripcion": "Cuando y como termina el ciclo de vida del panal"
     }
   },
 
@@ -41,10 +37,21 @@
       "tipo": "nativo",
       "entry": "bdgb --glifo-run glifo-1",
       "actualizable": false,
+      "glifo_principal": true,
       "descripcion": "Que hace este glifo",
       "inputs": [],
       "outputs": [],
-      "glifo_json": "glifos/glifo-1/glifo.json"
+      "glifo_json": "glifos/glifo-1/glifo.json",
+      "tiempo": {
+        "modalidad": "dirigido",
+        "inicio": {"trigger": "manual", "via": "bdgb --glifo-run glifo-1"},
+        "fin": {"tipo": "senal", "descripcion": "Termina y deja datos en pipeline_state"}
+      },
+      "bibliotecario": {
+        "recursos": [],
+        "credenciales": {},
+        "permisos": []
+      }
     },
     {
       "id": "glifo-externo",
@@ -53,10 +60,23 @@
       "entry": "python3 glifos/<panal>/glifos/glifo-externo/script.py",
       "lenguaje": "python3",
       "actualizable": true,
+      "glifo_principal": false,
       "descripcion": "Glifo externo actualizable",
       "inputs": ["pipeline_state/datos.json"],
       "outputs": ["pipeline_state/resultado.txt"],
-      "glifo_json": "glifos/glifo-externo/glifo.json"
+      "glifo_json": "glifos/glifo-externo/glifo.json",
+      "tiempo": {
+        "modalidad": "dirigido",
+        "inicio": {"trigger": "dependencia", "via": "pipeline_state/datos.json"},
+        "fin": {"tipo": "senal", "descripcion": "Escribe pipeline_state/resultado.txt"}
+      },
+      "bibliotecario": {
+        "recursos": ["prompts/template.md"],
+        "credenciales": {
+          "api_x": {"tipo": "env", "key": "API_X_KEY"}
+        },
+        "permisos": ["read:pipeline_state", "write:pipeline_state"]
+      }
     },
     {
       "id": "sub-panal",
@@ -64,6 +84,7 @@
       "tipo": "panal",
       "ref": "glifos/sub-panal/semilla.json",
       "actualizable": false,
+      "glifo_principal": false,
       "descripcion": "Panal completo que funciona como glifo dentro de este panal o colmena",
       "inputs": [],
       "outputs": []

@@ -2,6 +2,7 @@
   "id": "clipboard-capturer",
   "nombre": "Capturador de Portapapeles",
   "tipo": "externo",
+  "glifo_principal": false,
   "descripcion": "Lee respuesta_ia.txt del pipeline_state y genera PDF formateado en Desktop/guiones/.",
   "entry": "python3 glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py",
   "actualizable": true,
@@ -13,6 +14,16 @@
     {"archivo": "Desktop/guiones/*.pdf", "formato": "pdf", "descripcion": "Articulo formateado como PDF"}
   ],
   "dependencias": ["content-writer"],
+  "tiempo": {
+    "modalidad": "dirigido",
+    "inicio": {"trigger": "dependencia", "via": "pipeline_state/respuesta_ia.txt"},
+    "fin": {"tipo": "senal", "descripcion": "Genera PDF, senal para cleanup"}
+  },
+  "bibliotecario": {
+    "recursos": [],
+    "credenciales": {},
+    "permisos": ["read:pipeline_state", "write:~/Desktop/guiones"]
+  },
   "config": {
     "carpeta_destino": "Desktop/guiones/",
     "formato": "A4, reportlab",
