@@ -1,0 +1,30 @@
+{
+  "id": "estrutura",
+  "nombre": "Verificador de Estructura",
+  "tipo": "externo",
+  "glifo_principal": false,
+  "descripcion": "Corrobora que todos los requisitos y espacios necesarios para que el panal funcione. Crea lo que falta y advierte lo que requiere intervencion manual. Valido desde glifo hasta familia.",
+  "entry": "python3 glifos/generacion-contenido/glifos/estrutura/estrutura.py",
+  "actualizable": true,
+  "lenguaje": "python3",
+  "inputs": [],
+  "outputs": [],
+  "dependencias": [],
+  "tiempo": {
+    "modalidad": "dirigido",
+    "inicio": {"trigger": "manual | automatico", "via": "primer paso del pipeline, antes que cualquier glifo"},
+    "fin": {"tipo": "senal", "descripcion": "Estructura verificada/creada. Si hay errores fatales, detiene el pipeline"}
+  },
+  "bibliotecario": {
+    "recursos": [],
+    "credenciales": {},
+    "permisos": ["read:glifos/<panal>", "write:glifos/<panal>/pipeline_state", "write:glifos/<panal>/prompts"]
+  },
+  "config": {
+    "alcance": "panal | colmena | familia",
+    "acciones": "verificar existencia, crear si falta, advertir si no se puede",
+    "elementos_verifica": ["semilla.json", "glifo.json por glifo", "entry scripts", "directorios pipeline_state/", "recursos bibliotecario", "output directories", "coherencia pipeline vs glifos"]
+  },
+  "panal": "generacion-contenido",
+  "version": "1.0"
+}

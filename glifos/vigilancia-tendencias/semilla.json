@@ -27,10 +27,22 @@
   },
 
   "config": {
-    "pipeline": ["primo", "trend-tracker"]
+    "pipeline": ["estrutura", "primo", "trend-tracker"]
   },
 
   "glifos": [
+    {
+      "id": "estrutura",
+      "nombre": "Verificador de Estructura",
+      "tipo": "externo",
+      "entry": "python3 glifos/generacion-contenido/glifos/estrutura/estrutura.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Verifica que todos los directorios, archivos y recursos necesarios existen. Crea lo que falta.",
+      "inputs": [],
+      "outputs": [],
+      "glifo_json": "glifos/estrutura/glifo.json"
+    },
     {
       "id": "primo",
       "nombre": "Glifo Primo",

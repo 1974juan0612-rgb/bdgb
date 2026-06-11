@@ -19,10 +19,22 @@
   },
 
   "config": {
-    "pipeline": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"]
+    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"]
   },
 
   "glifos": [
+    {
+      "id": "estrutura",
+      "nombre": "Verificador de Estructura",
+      "tipo": "externo",
+      "entry": "python3 glifos/generacion-contenido/glifos/estrutura/estrutura.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Verifica que todos los directorios, archivos y recursos necesarios existen. Crea los que faltan.",
+      "inputs": [],
+      "outputs": [],
+      "glifo_json": "glifos/estrutura/glifo.json"
+    },
     {
       "id": "trend-fetcher",
       "nombre": "Buscador de Tendencias",
@@ -119,10 +131,18 @@
   "pipeline": {
     "orden": [
       {
+        "paso": 0,
+        "glifo": "estrutura",
+        "accion": "verify",
+        "args": [],
+        "descripcion": "Verificar estructura del panal: directorios, archivos, recursos. Crear lo faltante. Informar errores."
+      },
+      {
         "paso": 1,
         "glifo": "trend-fetcher",
         "accion": "fetch",
         "args": [],
+        "dependencias": ["estrutura"],
         "descripcion": "Obtener tendencias de Google Trends RSS + pytrends, guardar en pipeline_state/tendencias.json"
       },
       {

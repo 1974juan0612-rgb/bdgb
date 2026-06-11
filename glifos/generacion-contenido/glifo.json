@@ -24,7 +24,7 @@
     "permisos": ["read:glifos/generacion-contenido", "exec:python3", "exec:chrome"]
   },
   "config": {
-    "pipeline": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"],
+    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"],
     "tipo_orquestacion": "generica — lee semilla.json del panal",
     "formatos_soporte": ["config.pipeline (array strings)", "pipeline.orden (array objetos)", "glifos (orden declaracion)"],
     "manejo_errores": "ERROR detiene pipeline, WARN continua (cleanup)"
