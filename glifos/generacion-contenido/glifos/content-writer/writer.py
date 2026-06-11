@@ -8,8 +8,9 @@ from datetime import datetime
 import urllib.request
 
 PANAL_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-THEME_FILE = os.path.join(PANAL_DIR, "tema_seleccionado.json")
-OUTPUT_FILE = os.path.join(PANAL_DIR, "respuesta_ia.txt")
+STATE_DIR = os.path.join(PANAL_DIR, "pipeline_state")
+THEME_FILE = os.path.join(STATE_DIR, "tema_seleccionado.json")
+OUTPUT_FILE = os.path.join(STATE_DIR, "respuesta_ia.txt")
 AI_URL = os.environ.get("BDGB_AI_WEB_URL", "https://chatgpt.com")
 
 ws = None

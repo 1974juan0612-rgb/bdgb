@@ -2,14 +2,15 @@
   "id": "generacion-contenido",
   "nombre": "Generacion de Contenido desde Tendencias",
   "tipo": "panal",
-  "descripcion": "Busca tendencias en internet, selecciona la mas relevante por autoridad, genera un articulo profundo con IA via API (sin navegador, automatico) y lo guarda como PDF en el escritorio",
+  "descripcion": "Busca tendencias en internet, selecciona la mas relevante por autoridad, genera un articulo profundo con IA via navegador CDP y lo guarda como PDF en el escritorio",
   "estado": "activo",
-  "version": "1.0",
+  "version": "2.0",
   "rama": "online",
   "creado": "2026-06-09",
 
   "_regla": "Esta semilla es la autoridad del panal. Lo que no esta declarado aqui no existe ni se ejecuta.",
   "_clasificacion": "Primo=codigo original (src/glifo.c). Semilla=este archivo. Comun=glifos operativos.",
+  "_protocolo": "Los glifos se comunican mediante archivos JSON en pipeline_state/. Cada glifo lee sus inputs de ahi y escribe sus outputs ahi.",
 
   "tiempo": {
     "tipo": "dirigido",
@@ -25,7 +26,9 @@
       "entry": "python3 glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Obtiene tendencias de internet (Google Trends RSS + pytrends)"
+      "descripcion": "Obtiene tendencias de internet (Google Trends RSS + pytrends)",
+      "inputs": [],
+      "outputs": ["pipeline_state/tendencias.json"]
     },
     {
       "id": "authority-selector",
@@ -34,7 +37,9 @@
       "entry": "python3 glifos/generacion-contenido/glifos/authority-selector/selector.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Recibe las tendencias y elige la de mayor autoridad (score + volumen)"
+      "descripcion": "Recibe las tendencias y elige la de mayor autoridad (score + volumen)",
+      "inputs": ["pipeline_state/tendencias.json"],
+      "outputs": ["pipeline_state/tema_seleccionado.json"]
     },
     {
       "id": "content-writer",
@@ -43,7 +48,9 @@
       "entry": "python3 glifos/generacion-contenido/glifos/content-writer/writer.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Copia prompt al portapapeles, abre la IA en el navegador, espera que pegues y copies la respuesta"
+      "descripcion": "Abre ChatGPT en navegador via CDP, escribe prompt natural, extrae respuesta",
+      "inputs": ["pipeline_state/tema_seleccionado.json"],
+      "outputs": ["pipeline_state/respuesta_ia.txt"]
     },
     {
       "id": "clipboard-capturer",
@@ -52,7 +59,9 @@
       "entry": "python3 glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Lee el portapapeles con la respuesta de la IA y la guarda como PDF en Desktop/guiones/"
+      "descripcion": "Lee respuesta_ia.txt y genera PDF en Desktop/guiones/",
+      "inputs": ["pipeline_state/respuesta_ia.txt"],
+      "outputs": ["Desktop/guiones/*.pdf"]
     },
     {
       "id": "cleanup",
@@ -61,7 +70,9 @@
       "entry": "python3 glifos/generacion-contenido/glifos/cleanup/cleaner.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Cierra Chrome/Edge lanzados por content-writer, libera puertos CDP, elimina archivos temporales del pipeline"
+      "descripcion": "Cierra Chrome/Edge lanzados por content-writer, libera puertos CDP, limpia pipeline_state/",
+      "inputs": [],
+      "outputs": []
     }
   ],
 
@@ -70,25 +81,29 @@
       "de": "trend-fetcher",
       "a": "authority-selector",
       "tipo": "datos",
-      "flujo": "trend-fetcher escribe tendencias.json, authority-selector lo lee y selecciona una"
+      "flujo": "trend-fetcher escribe pipeline_state/tendencias.json, authority-selector lo lee",
+      "protocolo": "pipeline_state/tendencias.json"
     },
     {
       "de": "authority-selector",
       "a": "content-writer",
       "tipo": "datos",
-      "flujo": "authority-selector escribe tema_seleccionado.json, content-writer lo lee y prepara prompt"
+      "flujo": "authority-selector escribe pipeline_state/tema_seleccionado.json, content-writer lo lee",
+      "protocolo": "pipeline_state/tema_seleccionado.json"
     },
     {
       "de": "content-writer",
       "a": "clipboard-capturer",
       "tipo": "archivo",
-      "flujo": "content-writer escribe respuesta_ia.txt, clipboard-capturer lo lee y genera PDF"
+      "flujo": "content-writer escribe pipeline_state/respuesta_ia.txt, clipboard-capturer lo lee",
+      "protocolo": "pipeline_state/respuesta_ia.txt"
     },
     {
       "de": "clipboard-capturer",
       "a": "cleanup",
       "tipo": "cierre",
-      "flujo": "cleanup cierra Chrome/Edge, libera puertos CDP, elimina archivos temporales del pipeline"
+      "flujo": "cleanup cierra Chrome, libera puertos CDP, elimina pipeline_state/",
+      "protocolo": "ninguno"
     }
   ],
 
@@ -99,7 +114,7 @@
         "glifo": "trend-fetcher",
         "accion": "fetch",
         "args": [],
-        "descripcion": "Obtener tendencias de Google Trends RSS + pytrends, guardar en tendencias.json"
+        "descripcion": "Obtener tendencias de Google Trends RSS + pytrends, guardar en pipeline_state/tendencias.json"
       },
       {
         "paso": 2,
@@ -107,7 +122,7 @@
         "accion": "select",
         "args": [],
         "dependencias": ["trend-fetcher"],
-        "descripcion": "Leer tendencias.json, seleccionar la de mayor autoridad, guardar en tema_seleccionado.json"
+        "descripcion": "Leer pipeline_state/tendencias.json, seleccionar la de mayor autoridad, guardar en pipeline_state/tema_seleccionado.json"
       },
       {
         "paso": 3,
@@ -115,7 +130,7 @@
         "accion": "cdp-browser",
         "args": [],
         "dependencias": ["authority-selector"],
-        "descripcion": "Abrir ChatGPT en Chrome via CDP, escribir prompt, enviar, extraer respuesta automaticamente"
+        "descripcion": "Abrir ChatGPT en Chrome via CDP, escribir prompt, enviar, extraer respuesta a pipeline_state/respuesta_ia.txt"
       },
       {
         "paso": 4,
@@ -123,7 +138,7 @@
         "accion": "pdf",
         "args": [],
         "dependencias": ["content-writer"],
-        "descripcion": "Leer respuesta_ia.txt, generar PDF en Desktop/guiones/"
+        "descripcion": "Leer pipeline_state/respuesta_ia.txt, generar PDF en Desktop/guiones/"
       },
       {
         "paso": 5,
@@ -131,12 +146,13 @@
         "accion": "clean",
         "args": [],
         "dependencias": ["clipboard-capturer"],
-        "descripcion": "Cerrar Chrome/Edge abiertos por content-writer, liberar puertos CDP, limpiar temporales"
+        "descripcion": "Cerrar Chrome/Edge, liberar puertos CDP, limpiar pipeline_state/"
       }
     ]
   },
 
   "datos_panal": {
+    "protocolo_comunicacion": "pipeline_state/ — archivos JSON/txt temporales. Cada glifo lee inputs de ahi y escribe outputs.",
     "fuentes": ["google-trends-rss", "pytrends-api", "mock-internet"],
     "criterio_autoridad": "score + volumen de busqueda",
     "formato_salida": "PDF",

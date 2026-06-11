@@ -33,7 +33,9 @@
       "tipo": "nativo",
       "entry": "bdgb --glifo-run primo",
       "actualizable": false,
-      "descripcion": "Fetch via RSS, reporte .txt, inyeccion en BDGB"
+      "descripcion": "Fetch via RSS, reporte .txt, inyeccion en BDGB",
+      "inputs": [],
+      "outputs": ["pipeline_state/tendencias.json", "pipeline_state/reporte_primo.txt"]
     },
     {
       "id": "trend-tracker",
@@ -42,7 +44,9 @@
       "entry": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal"
+      "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal",
+      "inputs": ["pipeline_state/tendencias.json"],
+      "outputs": ["pipeline_state/reporte_tracker.json", "pipeline_state/resumen_semanal.json"]
     }
   ],
 

@@ -4,6 +4,7 @@
 import os, sys, subprocess, signal, time, glob, tempfile, shutil
 
 PANAL_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+STATE_DIR = os.path.join(PANAL_DIR, "pipeline_state")
 
 
 def kill_chrome_cdp():
@@ -72,15 +73,9 @@ def main():
 
     print(f"[cleanup] Procesos terminados: {ch} Chrome/Edge, {pk} puertos liberados")
 
-    temp_files = [
-        os.path.join(PANAL_DIR, "tendencias.json"),
-        os.path.join(PANAL_DIR, "tema_seleccionado.json"),
-        os.path.join(PANAL_DIR, "respuesta_ia.txt"),
-    ]
-    for f in temp_files:
-        if os.path.exists(f):
-            os.remove(f)
-            print(f"[cleanup] Eliminado: {os.path.basename(f)}")
+    if os.path.exists(STATE_DIR):
+        shutil.rmtree(STATE_DIR, ignore_errors=True)
+        print(f"[cleanup] Eliminado: pipeline_state/")
 
     print("[cleanup] OK")
     return 0

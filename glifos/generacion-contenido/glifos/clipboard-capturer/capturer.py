@@ -5,7 +5,8 @@ import json, os, sys, subprocess
 from datetime import datetime
 
 PANAL_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-RESPONSE_FILE = os.path.join(PANAL_DIR, "respuesta_ia.txt")
+STATE_DIR = os.path.join(PANAL_DIR, "pipeline_state")
+RESPONSE_FILE = os.path.join(STATE_DIR, "respuesta_ia.txt")
 DESKTOP = os.path.join(os.path.expanduser("~"), "Desktop")
 GUIONES_DIR = os.path.join(DESKTOP, "guiones")
 
@@ -29,7 +30,7 @@ def paste_from_clipboard():
 
 
 def load_topic():
-    theme_file = os.path.join(PANAL_DIR, "tema_seleccionado.json")
+    theme_file = os.path.join(STATE_DIR, "tema_seleccionado.json")
     if os.path.exists(theme_file):
         with open(theme_file, "r", encoding="utf-8") as f:
             data = json.load(f)
@@ -93,14 +94,13 @@ def generate_pdf(topic, content, output_path):
 def main():
     print("[clipboard-capturer] Buscando respuesta de IA...")
 
-    resp_file = os.path.join(PANAL_DIR, "respuesta_ia.txt")
     text = ""
-    if os.path.exists(resp_file):
-        with open(resp_file, "r", encoding="utf-8") as f:
+    if os.path.exists(RESPONSE_FILE):
+        with open(RESPONSE_FILE, "r", encoding="utf-8") as f:
             text = f.read()
         header = text.find("\n\n")
         if header > 0: text = text[header:].strip()
-        print(f"[clipboard-capturer] Leyendo de {resp_file}")
+        print(f"[clipboard-capturer] Leyendo de {RESPONSE_FILE}")
 
     if not text or len(text) < 50:
         text = paste_from_clipboard()

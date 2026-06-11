@@ -5,7 +5,8 @@ import json, os, sys, subprocess, random
 from datetime import datetime
 
 PANAL_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DATA_FILE = os.path.join(PANAL_DIR, "tendencias.json")
+STATE_DIR = os.path.join(PANAL_DIR, "pipeline_state")
+DATA_FILE = os.path.join(STATE_DIR, "tendencias.json")
 TRENDS_RSS = "https://trends.google.com/trending/rss?geo=US"
 
 MOCK_TOPICS = [
@@ -71,6 +72,7 @@ def fetch_rss():
 
 def main():
     print("[trend-fetcher] Buscando tendencias en internet...")
+    os.makedirs(STATE_DIR, exist_ok=True)
     trends = fetch_rss()
     if not trends:
         print("[trend-fetcher] ERROR: no se encontraron tendencias")

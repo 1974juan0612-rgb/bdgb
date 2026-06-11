@@ -3,11 +3,9 @@ __pycache__/
 *.pyc
 test_data/
 data/
-glifos/*/tendencias.json
-glifos/*/tema_seleccionado.json
 
 # Pipeline temporals
-glifos/generacion-contenido/respuesta_ia.txt
 
-glifos/generacion-contenido/tendencias.json
-glifos/generacion-contenido/tema_seleccionado.json
+
+# Pipeline state (protocolo entre glifos)
+glifos/**/pipeline_state/

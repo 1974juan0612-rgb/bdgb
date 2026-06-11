@@ -5,8 +5,9 @@ import json, os, sys
 from datetime import datetime
 
 PANAL_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-TRENDS_FILE = os.path.join(PANAL_DIR, "tendencias.json")
-OUTPUT_FILE = os.path.join(PANAL_DIR, "tema_seleccionado.json")
+STATE_DIR = os.path.join(PANAL_DIR, "pipeline_state")
+TRENDS_FILE = os.path.join(STATE_DIR, "tendencias.json")
+OUTPUT_FILE = os.path.join(STATE_DIR, "tema_seleccionado.json")
 
 
 def calculate_authority(trend):

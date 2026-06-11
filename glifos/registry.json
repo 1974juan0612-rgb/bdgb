@@ -1,7 +1,7 @@
 {
-  "version": "3.3",
+  "version": "3.4",
   "_desc": "Registro maestro de familias, colmenas, panales y glifos.",
-  "nota": "Jerarquia: Familia > Colmena > Panal > Glifo. Cada panal tiene semilla.json. El Tiempo controla la activacion. Un panal puede ser glifo de otro panal o colmena.",
+  "nota": "Jerarquia: Familia > Colmena > Panal > Glifo. Cada panal tiene semilla.json. El Tiempo controla la activacion. Protocolo: pipeline_state/ para comunicacion entre glifos.",
   "familias": [
     {
       "id": "nombre-familia",
@@ -35,7 +35,7 @@
       "panal": "generacion-contenido",
       "rama": "online",
       "tiempo": "dirigido",
-      "descripcion": "Busca tendencias, selecciona por autoridad, genera articulo con IA via API (automatico, sin navegador) y guarda PDF en escritorio",
+      "descripcion": "Busca tendencias, selecciona por autoridad, genera articulo con IA via navegador CDP (Chrome DevTools Protocol), guarda PDF en escritorio. Pipeline de 5 glifos con protocolo pipeline_state/.",
       "estado": "activo",
       "ruta": "generacion-contenido/",
       "semilla": "generacion-contenido/semilla.json",
@@ -53,6 +53,8 @@
       "creado": "2026-06-08",
       "panal": "vigilancia-tendencias",
       "ruta": "vigilancia-tendencias/glifos/primo/",
+      "inputs": [],
+      "outputs": ["pipeline_state/tendencias.json", "pipeline_state/reporte_primo.txt"],
       "schedule": {
         "tipo": "diario",
         "hora": "08:00"
@@ -74,6 +76,8 @@
       "panal": "vigilancia-tendencias",
       "ruta": "vigilancia-tendencias/glifos/trend-tracker/",
       "entry": "python3 vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
+      "inputs": ["pipeline_state/tendencias.json"],
+      "outputs": ["pipeline_state/reporte_tracker.json", "pipeline_state/resumen_semanal.json"],
       "schedule": {
         "tipo": "diario",
         "hora": "08:05"
@@ -123,6 +127,8 @@
       "panal": "generacion-contenido",
       "ruta": "generacion-contenido/glifos/trend-fetcher/",
       "entry": "python3 generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
+      "inputs": [],
+      "outputs": ["pipeline_state/tendencias.json"],
       "metricas": {
         "ejecuciones": 0,
         "exitosas": 0,
@@ -140,6 +146,8 @@
       "panal": "generacion-contenido",
       "ruta": "generacion-contenido/glifos/authority-selector/",
       "entry": "python3 generacion-contenido/glifos/authority-selector/selector.py",
+      "inputs": ["pipeline_state/tendencias.json"],
+      "outputs": ["pipeline_state/tema_seleccionado.json"],
       "dependencias": ["trend-fetcher"],
       "metricas": {
         "ejecuciones": 0,
@@ -157,6 +165,8 @@
       "panal": "generacion-contenido",
       "ruta": "generacion-contenido/glifos/content-writer/",
       "entry": "python3 generacion-contenido/glifos/content-writer/writer.py",
+      "inputs": ["pipeline_state/tema_seleccionado.json"],
+      "outputs": ["pipeline_state/respuesta_ia.txt"],
       "dependencias": ["authority-selector"],
       "metricas": {
         "ejecuciones": 0,
@@ -174,6 +184,8 @@
       "panal": "generacion-contenido",
       "ruta": "generacion-contenido/glifos/clipboard-capturer/",
       "entry": "python3 generacion-contenido/glifos/clipboard-capturer/capturer.py",
+      "inputs": ["pipeline_state/respuesta_ia.txt"],
+      "outputs": ["Desktop/guiones/*.pdf"],
       "dependencias": ["content-writer"],
       "metricas": {
         "ejecuciones": 0,
@@ -191,6 +203,8 @@
       "panal": "generacion-contenido",
       "ruta": "generacion-contenido/glifos/cleanup/",
       "entry": "python3 generacion-contenido/glifos/cleanup/cleaner.py",
+      "inputs": [],
+      "outputs": [],
       "dependencias": ["clipboard-capturer"],
       "metricas": {
         "ejecuciones": 0,
