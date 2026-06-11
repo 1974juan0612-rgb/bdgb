@@ -2,10 +2,23 @@
   "id": "trend-tracker",
   "nombre": "Trend Tracker Diario",
   "tipo": "externo",
-  "lenguaje": "python3",
-  "descripcion": "Script Python. Google Trends + pytrends, reporte JSON/PDF, resumen semanal.",
+  "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal. Segundo paso del pipeline.",
   "entry": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
-  "estado": "activo",
-  "sistema": "vigilancia-tendencias",
-  "dependencias": ["primo"]
+  "actualizable": true,
+  "lenguaje": "python3",
+  "inputs": [
+    {"archivo": "pipeline_state/tendencias.json", "formato": "json", "descripcion": "Tendencias del glifo primo"}
+  ],
+  "outputs": [
+    {"archivo": "pipeline_state/reporte_tracker.json", "formato": "json", "descripcion": "Reporte diario detallado"},
+    {"archivo": "pipeline_state/resumen_semanal.json", "formato": "json", "descripcion": "Resumen semanal (cada 7 dias)"}
+  ],
+  "dependencias": ["primo"],
+  "config": {
+    "fuente": "pytrends",
+    "horario_diario": "08:05",
+    "periodo_resumen": "7 dias"
+  },
+  "panal": "vigilancia-tendencias",
+  "version": "1.0"
 }

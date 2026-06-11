@@ -30,6 +30,10 @@
     }
   },
 
+  "config": {
+    "pipeline": ["glifo-1", "glifo-externo", "cleanup"]
+  },
+
   "glifos": [
     {
       "id": "glifo-1",
@@ -37,7 +41,10 @@
       "tipo": "nativo",
       "entry": "bdgb --glifo-run glifo-1",
       "actualizable": false,
-      "descripcion": "Que hace este glifo"
+      "descripcion": "Que hace este glifo",
+      "inputs": [],
+      "outputs": [],
+      "glifo_json": "glifos/glifo-1/glifo.json"
     },
     {
       "id": "glifo-externo",
@@ -46,7 +53,10 @@
       "entry": "python3 glifos/<panal>/glifos/glifo-externo/script.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Glifo externo actualizable"
+      "descripcion": "Glifo externo actualizable",
+      "inputs": ["pipeline_state/datos.json"],
+      "outputs": ["pipeline_state/resultado.txt"],
+      "glifo_json": "glifos/glifo-externo/glifo.json"
     },
     {
       "id": "sub-panal",
@@ -54,7 +64,9 @@
       "tipo": "panal",
       "ref": "glifos/sub-panal/semilla.json",
       "actualizable": false,
-      "descripcion": "Panal completo que funciona como glifo dentro de este panal o colmena"
+      "descripcion": "Panal completo que funciona como glifo dentro de este panal o colmena",
+      "inputs": [],
+      "outputs": []
     }
   ],
 

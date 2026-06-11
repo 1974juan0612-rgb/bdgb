@@ -36,4 +36,12 @@ void glifo_mark_fail(const char *id);
    Solo los glifos en panales activos pueden listarse y ejecutarse. */
 int glifo_load_systems(void);
 
+/* Orquestador generico: lee semilla.json del panal y ejecuta pipeline */
+int glifo_pipeline_run(const char *panal_id);
+
+/* Wrappers especificos por panal */
+int glifo_generacion_contenido_run(const char *args);
+int glifo_vigilancia_run(const char *args);
+int glifo_primo_run(const char *args);
+
 #endif

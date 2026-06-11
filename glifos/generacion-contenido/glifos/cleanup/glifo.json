@@ -1,0 +1,18 @@
+{
+  "id": "cleanup",
+  "nombre": "Limpiador de Recursos",
+  "tipo": "externo",
+  "descripcion": "Cierra Chrome/Edge abiertos por content-writer, libera puertos CDP, elimina pipeline_state/.",
+  "entry": "python3 glifos/generacion-contenido/glifos/cleanup/cleaner.py",
+  "actualizable": true,
+  "lenguaje": "python3",
+  "inputs": [],
+  "outputs": [],
+  "dependencias": ["clipboard-capturer"],
+  "config": {
+    "accion": "matar procesos Chrome/Edge + eliminar pipeline_state/",
+    "puertos_cdp": [9222, 9223, 9224, 9225]
+  },
+  "panal": "generacion-contenido",
+  "version": "2.0"
+}

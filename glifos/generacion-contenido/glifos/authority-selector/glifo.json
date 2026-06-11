@@ -2,11 +2,21 @@
   "id": "authority-selector",
   "nombre": "Selector por Autoridad",
   "tipo": "externo",
-  "lenguaje": "python3",
-  "descripcion": "Lee tendencias.json, selecciona la tendencia con mayor autoridad (score + volumen), guarda tema_seleccionado.json.",
+  "descripcion": "Recibe tendencias y elige la de mayor autoridad (score + categoria + longitud). Segundo paso del pipeline.",
   "entry": "python3 glifos/generacion-contenido/glifos/authority-selector/selector.py",
-  "estado": "activo",
-  "panal": "generacion-contenido",
   "actualizable": true,
-  "dependencias": ["trend-fetcher"]
+  "lenguaje": "python3",
+  "inputs": [
+    {"archivo": "pipeline_state/tendencias.json", "formato": "json", "descripcion": "Tendencias del trend-fetcher"}
+  ],
+  "outputs": [
+    {"archivo": "pipeline_state/tema_seleccionado.json", "formato": "json", "descripcion": "Tendencia ganadora con score de autoridad"}
+  ],
+  "dependencias": ["trend-fetcher"],
+  "config": {
+    "criterio": "score + bonus_categoria + bonus_longitud",
+    "bonus_categoria": {"tecnologia": 5, "ciencia": 5, "educacion": 3}
+  },
+  "panal": "generacion-contenido",
+  "version": "2.0"
 }

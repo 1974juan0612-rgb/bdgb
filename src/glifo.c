@@ -2,12 +2,14 @@
 #include "bdgb.h"
 #include "nlp.h"
 #include "util.h"
+#include "json.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
 #define TRENDS_RSS_URL "https://trends.google.com/trending/rss?geo=US"
+#define MAX_PATH_LEN 512
 
 /* ============================================================
  *   REGISTRY
@@ -30,7 +32,7 @@ int glifo_register(const char *id, const char *nombre,
     return 0;
 }
 
-/* ---- Helpers JSON para leer registry.json ---- */
+/* ---- Helpers JSON para leer registry.json (legacy, sin json.c) ---- */
 
 static int json_strval(const char *json, const char *key, char *out, size_t outsz) {
     char search[128];
@@ -167,47 +169,229 @@ void glifo_mark_fail(const char *id) {
 }
 
 /* ============================================================
- *   GLIFO GENERACION-CONTENIDO — Orquestador del panal
- *   Ejecuta pipeline completo: trend-fetcher -> authority-selector -> content-writer
+ *   ORQUESTADOR GENERICO — lee semilla.json, ejecuta pipeline
  * ============================================================ */
 
-static int run_python_script(const char *rel_path) {
-    const char *root = getenv("BDGB_ROOT");
-    if (!root) root = ".";
-    const char *pye = getenv("BDGB_PYTHON");
-    if (!pye) pye = "python";
-    char full[512];
-    snprintf(full, sizeof(full), "%s \"%s/%s\"", pye, root, rel_path);
-    printf("[GLIFO-GC] Ejecutando: %s\n", rel_path);
+static int run_command(const char *cmd) {
+    printf("[PIPELINE] %s\n", cmd);
     char buf[4096] = {0};
-    int r = run_captured(full, buf, sizeof(buf));
-    printf("%s", buf);
+    int r = run_captured(cmd, buf, sizeof(buf));
+    if (buf[0]) printf("%s", buf);
     return r;
 }
 
+/* Busca un glifo por id en el array "glifos" de semilla.json.
+   Devuelve el entry como string (no debe ser freed). */
+static const char *find_entry(JsonValue *semilla, const char *glifo_id) {
+    JsonValue *glifos_arr = json_get(semilla, "glifos");
+    if (!glifos_arr) return NULL;
+    int n = json_len(glifos_arr);
+    for (int i = 0; i < n; i++) {
+        JsonValue *g = json_idx(glifos_arr, i);
+        if (!g) continue;
+        JsonValue *id_v = json_get(g, "id");
+        if (!id_v) continue;
+        if (strcmp(json_string(id_v), glifo_id) != 0) continue;
+        JsonValue *entry_v = json_get(g, "entry");
+        if (!entry_v) continue;
+        return json_string(entry_v);
+    }
+    return NULL;
+}
+
+/* Lee el root path desde BDGB_ROOT o pwd */
+static const char *get_root(void) {
+    const char *r = getenv("BDGB_ROOT");
+    return r ? r : ".";
+}
+
+/* Construye la ruta completa: <root>/glifos/<panal>/semilla.json */
+static void build_semilla_path(char *out, size_t outsz, const char *panal) {
+    snprintf(out, outsz, "%s/glifos/%s/semilla.json", get_root(), panal);
+}
+
+/* Ejecuta un paso del pipeline.
+   Returns: 0 = OK, -1 = ERROR (stop pipeline), -2 = SKIP (continue) */
+static int ejecutar_paso(JsonValue *semilla, const char *glifo_id,
+                         const char *args_extra, int warn_on_fail) {
+    const char *entry = find_entry(semilla, glifo_id);
+    if (!entry) {
+        printf("[PIPELINE] ERROR: glifo '%s' no tiene entry en semilla.json\n", glifo_id);
+        return warn_on_fail ? GLIFO_SALTAR : GLIFO_ERR;
+    }
+
+    char cmd[1024];
+    if (args_extra && args_extra[0])
+        snprintf(cmd, sizeof(cmd), "%s %s", entry, args_extra);
+    else
+        snprintf(cmd, sizeof(cmd), "%s", entry);
+
+    int r = run_command(cmd);
+    if (r != 0) {
+        if (warn_on_fail) {
+            printf("[PIPELINE] WARN: '%s' fallo (codigo %d), continuando\n", glifo_id, r);
+            return GLIFO_SALTAR;
+        }
+        printf("[PIPELINE] ERROR: '%s' fallo (codigo %d), pipeline detenido\n", glifo_id, r);
+        return GLIFO_ERR;
+    }
+    return GLIFO_OK;
+}
+
+/* Orquestador generico.
+   Args: nombre del panal (e.g. "generacion-contenido", "vigilancia-tendencias").
+   Lee semilla.json del panal y ejecuta pipeline segun config.pipeline
+   (array simple) o pipeline.orden (array detallado). */
+int glifo_pipeline_run(const char *args) {
+    const char *panal = args;
+    if (!panal || !panal[0]) panal = "generacion-contenido";
+
+    printf("[PIPELINE] ===== Panal: %s =====\n", panal);
+
+    char semilla_path[MAX_PATH_LEN];
+    build_semilla_path(semilla_path, sizeof(semilla_path), panal);
+
+    JsonValue *semilla = json_parse_file(semilla_path);
+    if (!semilla) {
+        printf("[PIPELINE] ERROR: no se pudo leer %s\n", semilla_path);
+        return GLIFO_ERR;
+    }
+
+    /* Determinar orden del pipeline */
+    int step_count = 0;
+    char step_ids[32][64];
+    char step_args[32][128];
+    int step_warn[32];
+
+    /* Priority 1: config.pipeline (array simple de strings) */
+    JsonValue *cfg = json_get(semilla, "config");
+    if (cfg) {
+        JsonValue *arr = json_get(cfg, "pipeline");
+        if (arr) {
+            int n = json_len(arr);
+            for (int i = 0; i < n && step_count < 32; i++) {
+                JsonValue *id_v = json_idx(arr, i);
+                if (!id_v || json_string(id_v) == NULL) continue;
+                strncpy(step_ids[step_count], json_string(id_v), 63);
+                step_ids[step_count][63] = 0;
+                step_args[step_count][0] = 0;
+                step_warn[step_count] = 0;
+                step_count++;
+            }
+        }
+    }
+
+    /* Priority 2: pipeline.orden (array detallado de objetos) */
+    if (step_count == 0) {
+        JsonValue *orden = json_path(semilla, "pipeline.orden");
+        if (orden) {
+            int n = json_len(orden);
+            for (int i = 0; i < n && step_count < 32; i++) {
+                JsonValue *step = json_idx(orden, i);
+                if (!step) continue;
+                JsonValue *gv = json_get(step, "glifo");
+                if (!gv || !json_string(gv)) continue;
+                strncpy(step_ids[step_count], json_string(gv), 63);
+                step_ids[step_count][63] = 0;
+
+                /* args opcionales */
+                JsonValue *av = json_get(step, "args");
+                if (av) {
+                    char buf[128] = {0};
+                    int alen = json_len(av);
+                    for (int a = 0; a < alen; a++) {
+                        JsonValue *av_i = json_idx(av, a);
+                        if (av_i && json_string(av_i)) {
+                            if (buf[0]) strncat(buf, " ", sizeof(buf) - strlen(buf) - 1);
+                            strncat(buf, json_string(av_i), sizeof(buf) - strlen(buf) - 1);
+                        }
+                    }
+                    strncpy(step_args[step_count], buf, 127);
+                    step_args[step_count][127] = 0;
+                } else {
+                    step_args[step_count][0] = 0;
+                }
+
+                /* warn_on_fail si glifo_id contiene "cleanup" o accion contiene "clean" */
+                if (strstr(step_ids[step_count], "cleanup")) {
+                    step_warn[step_count] = 1;
+                } else {
+                    JsonValue *ev = json_get(step, "accion");
+                    step_warn[step_count] = (ev && json_string(ev) &&
+                        (strstr(json_string(ev), "cleanup") ||
+                         strcmp(json_string(ev), "clean") == 0)) ? 1 : 0;
+                }
+
+                step_count++;
+            }
+            /* ultimo paso siempre warn */
+            if (step_count > 0) step_warn[step_count - 1] = 1;
+        }
+    }
+
+    /* Priority 3: si no hay pipeline, ejecutar todos los glifos en orden declarado */
+    if (step_count == 0) {
+        JsonValue *glifos_arr = json_get(semilla, "glifos");
+        int n = json_len(glifos_arr);
+        for (int i = 0; i < n && step_count < 32; i++) {
+            JsonValue *g = json_idx(glifos_arr, i);
+            JsonValue *id_v = json_get(g, "id");
+            if (!id_v || !json_string(id_v)) continue;
+            strncpy(step_ids[step_count], json_string(id_v), 63);
+            step_ids[step_count][63] = 0;
+            step_args[step_count][0] = 0;
+            step_warn[step_count] = (strstr(step_ids[step_count], "cleanup") != NULL) ? 1 : 0;
+            step_count++;
+        }
+        if (step_count > 1) step_warn[step_count - 1] = 1;
+    }
+
+    if (step_count == 0) {
+        printf("[PIPELINE] ERROR: no se encontraron pasos en semilla.json\n");
+        json_free(semilla);
+        return GLIFO_ERR;
+    }
+
+    /* Ejecutar pipeline */
+    int total_ok = 0, total_warn = 0, total_err = 0;
+    for (int i = 0; i < step_count; i++) {
+        printf("[PIPELINE] Paso %d/%d: %s\n", i + 1, step_count, step_ids[i]);
+        int r = ejecutar_paso(semilla, step_ids[i], step_args[i], step_warn[i]);
+        if (r == GLIFO_OK) {
+            total_ok++;
+        } else if (r == GLIFO_SALTAR) {
+            total_warn++;
+        } else {
+            total_err++;
+            json_free(semilla);
+            printf("[PIPELINE] ===== Pipeline fallido en paso %d (%s) =====\n",
+                   i + 1, step_ids[i]);
+            return GLIFO_ERR;
+        }
+    }
+
+    json_free(semilla);
+    printf("[PIPELINE] ===== Pipeline completado: %d OK, %d WARN, %d ERR =====\n",
+           total_ok, total_warn, total_err);
+    return total_err > 0 ? GLIFO_ERR : GLIFO_OK;
+}
+
+/* ============================================================
+ *   GLIFO GENERACION-CONTENIDO — wrapper del orquestador
+ * ============================================================ */
+
 int glifo_generacion_contenido_run(const char *args) {
     (void)args;
-    printf("[GLIFO-GC] ===== Panal: Generacion de Contenido =====\n");
+    return glifo_pipeline_run("generacion-contenido");
+}
 
-    int r;
+/* ============================================================
+ *   GLIFO VIGILANCIA — wrapper del orquestador
+ * ============================================================ */
 
-    r = run_python_script("glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py");
-    if (r != 0) { printf("[GLIFO-GC] ERROR: trend-fetcher fallo (codigo %d)\n", r); return -1; }
-
-    r = run_python_script("glifos/generacion-contenido/glifos/authority-selector/selector.py");
-    if (r != 0) { printf("[GLIFO-GC] ERROR: authority-selector fallo (codigo %d)\n", r); return -1; }
-
-    r = run_python_script("glifos/generacion-contenido/glifos/content-writer/writer.py");
-    if (r != 0) { printf("[GLIFO-GC] ERROR: content-writer fallo (codigo %d)\n", r); return -1; }
-
-    r = run_python_script("glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py");
-    if (r != 0) { printf("[GLIFO-GC] ERROR: clipboard-capturer fallo (codigo %d)\n", r); return -1; }
-
-    r = run_python_script("glifos/generacion-contenido/glifos/cleanup/cleaner.py");
-    if (r != 0) { printf("[GLIFO-GC] WARN: cleanup fallo (codigo %d)\n", r); }
-
-    printf("[GLIFO-GC] ===== Pipeline completado exitosamente =====\n");
-    return 0;
+int glifo_vigilancia_run(const char *args) {
+    (void)args;
+    return glifo_pipeline_run("vigilancia-tendencias");
 }
 
 /* ============================================================
@@ -237,8 +421,6 @@ static const char *mock_categories[MOCK_COUNT] = {
 static int mock_scores[MOCK_COUNT] = {
     88, 79, 73, 67, 61, 82, 71, 64, 76, 91
 };
-
-/* run_captured y ensure_dir estan en util.c */
 
 typedef struct {
     char topic[64];
@@ -356,7 +538,10 @@ int glifo_primo_run(const char *args) {
 int glifo_init(void) {
     glifo_count = 0;
     glifo_register("primo", "Glifo Primo - Trend Tracker", glifo_primo_run);
-    glifo_register("generacion-contenido", "Orquestador Generacion de Contenido", glifo_generacion_contenido_run);
+    glifo_register("generacion-contenido", "Orquestador Generacion de Contenido",
+                   glifo_generacion_contenido_run);
+    glifo_register("vigilancia-tendencias", "Orquestador Vigilancia de Tendencias",
+                   glifo_vigilancia_run);
     glifo_load_systems();
     return glifo_count;
 }

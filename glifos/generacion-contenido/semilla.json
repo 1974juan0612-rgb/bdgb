@@ -18,6 +18,10 @@
     "descripcion": "Se ejecuta a solicitud del usuario. Cada vez que se invoca bdgb --glifo-run generacion-contenido, recorre el pipeline completo una vez y termina"
   },
 
+  "config": {
+    "pipeline": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"]
+  },
+
   "glifos": [
     {
       "id": "trend-fetcher",
@@ -28,7 +32,8 @@
       "actualizable": true,
       "descripcion": "Obtiene tendencias de internet (Google Trends RSS + pytrends)",
       "inputs": [],
-      "outputs": ["pipeline_state/tendencias.json"]
+      "outputs": ["pipeline_state/tendencias.json"],
+      "glifo_json": "glifos/trend-fetcher/glifo.json"
     },
     {
       "id": "authority-selector",
@@ -39,7 +44,8 @@
       "actualizable": true,
       "descripcion": "Recibe las tendencias y elige la de mayor autoridad (score + volumen)",
       "inputs": ["pipeline_state/tendencias.json"],
-      "outputs": ["pipeline_state/tema_seleccionado.json"]
+      "outputs": ["pipeline_state/tema_seleccionado.json"],
+      "glifo_json": "glifos/authority-selector/glifo.json"
     },
     {
       "id": "content-writer",
@@ -50,7 +56,8 @@
       "actualizable": true,
       "descripcion": "Abre ChatGPT en navegador via CDP, escribe prompt natural, extrae respuesta",
       "inputs": ["pipeline_state/tema_seleccionado.json"],
-      "outputs": ["pipeline_state/respuesta_ia.txt"]
+      "outputs": ["pipeline_state/respuesta_ia.txt"],
+      "glifo_json": "glifos/content-writer/glifo.json"
     },
     {
       "id": "clipboard-capturer",
@@ -61,7 +68,8 @@
       "actualizable": true,
       "descripcion": "Lee respuesta_ia.txt y genera PDF en Desktop/guiones/",
       "inputs": ["pipeline_state/respuesta_ia.txt"],
-      "outputs": ["Desktop/guiones/*.pdf"]
+      "outputs": ["Desktop/guiones/*.pdf"],
+      "glifo_json": "glifos/clipboard-capturer/glifo.json"
     },
     {
       "id": "cleanup",
@@ -72,7 +80,8 @@
       "actualizable": true,
       "descripcion": "Cierra Chrome/Edge lanzados por content-writer, libera puertos CDP, limpia pipeline_state/",
       "inputs": [],
-      "outputs": []
+      "outputs": [],
+      "glifo_json": "glifos/cleanup/glifo.json"
     }
   ],
 

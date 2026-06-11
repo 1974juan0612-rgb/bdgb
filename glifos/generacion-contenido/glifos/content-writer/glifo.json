@@ -2,11 +2,23 @@
   "id": "content-writer",
   "nombre": "Redactor de Articulos IA",
   "tipo": "externo",
-  "lenguaje": "python3",
-  "descripcion": "Usa IA externa (OpenAI, Claude, etc.) para generar un articulo profundo sobre el tema seleccionado y lo guarda como PDF en ~/Desktop/guiones/",
+  "descripcion": "Abre ChatGPT en navegador via CDP, escribe prompt natural, espera respuesta y la extrae. La IA no sabe que es un glifo.",
   "entry": "python3 glifos/generacion-contenido/glifos/content-writer/writer.py",
-  "estado": "activo",
-  "panal": "generacion-contenido",
   "actualizable": true,
-  "dependencias": ["authority-selector"]
+  "lenguaje": "python3",
+  "inputs": [
+    {"archivo": "pipeline_state/tema_seleccionado.json", "formato": "json", "descripcion": "Tema seleccionado por authority-selector"}
+  ],
+  "outputs": [
+    {"archivo": "pipeline_state/respuesta_ia.txt", "formato": "texto", "descripcion": "Articulo generado por la IA"}
+  ],
+  "dependencias": ["authority-selector"],
+  "config": {
+    "url_ia": "https://chatgpt.com",
+    "metodo": "CDP (Chrome DevTools Protocol)",
+    "timeout_segundos": 60,
+    "modos": "browser | mock"
+  },
+  "panal": "generacion-contenido",
+  "version": "2.0"
 }

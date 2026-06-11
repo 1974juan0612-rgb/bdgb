@@ -1,9 +1,21 @@
 {
   "id": "primo",
-  "nombre": "Glifo Primo - Trend Tracker",
+  "nombre": "Glifo Primo",
   "tipo": "nativo",
-  "descripcion": "Compilado en el binario BDGB. Fetch via curl/wget, reporte .txt, inyeccion en BDGB.",
+  "descripcion": "Primer glifo compilado en binario BDGB. Fetch de tendencias via RSS, reporte diario, inyeccion en BDGB.",
   "entry": "bdgb --glifo-run primo",
-  "estado": "activo",
-  "sistema": "vigilancia-tendencias"
+  "actualizable": false,
+  "lenguaje": "c99",
+  "inputs": [],
+  "outputs": [
+    {"archivo": "pipeline_state/tendencias.json", "formato": "json", "descripcion": "Tendencias del RSS"},
+    {"archivo": "pipeline_state/reporte_primo.txt", "formato": "txt", "descripcion": "Reporte diario en texto"}
+  ],
+  "dependencias": [],
+  "config": {
+    "fuente": "google-trends-rss",
+    "horario": "diario 08:00"
+  },
+  "panal": "vigilancia-tendencias",
+  "version": "1.0"
 }

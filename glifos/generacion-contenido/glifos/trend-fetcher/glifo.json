@@ -2,10 +2,19 @@
   "id": "trend-fetcher",
   "nombre": "Buscador de Tendencias",
   "tipo": "externo",
-  "lenguaje": "python3",
-  "descripcion": "Obtiene tendencias de internet via Google Trends RSS + pytrends. Escribe tendencias.json para el siguiente glifo.",
+  "descripcion": "Obtiene tendencias de internet (Google Trends RSS + pytrends). Primer paso del pipeline.",
   "entry": "python3 glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
-  "estado": "activo",
+  "actualizable": true,
+  "lenguaje": "python3",
+  "inputs": [],
+  "outputs": [
+    {"archivo": "pipeline_state/tendencias.json", "formato": "json", "descripcion": "Lista de tendencias con score y categoria"}
+  ],
+  "dependencias": [],
+  "config": {
+    "fuentes": ["google-trends-rss", "pytrends-api", "mock-internet"],
+    "max_tendencias": 15
+  },
   "panal": "generacion-contenido",
-  "actualizable": true
+  "version": "2.0"
 }

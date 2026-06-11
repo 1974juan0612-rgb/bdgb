@@ -26,6 +26,10 @@
     }
   },
 
+  "config": {
+    "pipeline": ["primo", "trend-tracker"]
+  },
+
   "glifos": [
     {
       "id": "primo",
@@ -35,7 +39,8 @@
       "actualizable": false,
       "descripcion": "Fetch via RSS, reporte .txt, inyeccion en BDGB",
       "inputs": [],
-      "outputs": ["pipeline_state/tendencias.json", "pipeline_state/reporte_primo.txt"]
+      "outputs": ["pipeline_state/tendencias.json", "pipeline_state/reporte_primo.txt"],
+      "glifo_json": "glifos/primo/glifo.json"
     },
     {
       "id": "trend-tracker",
@@ -46,7 +51,8 @@
       "actualizable": true,
       "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal",
       "inputs": ["pipeline_state/tendencias.json"],
-      "outputs": ["pipeline_state/reporte_tracker.json", "pipeline_state/resumen_semanal.json"]
+      "outputs": ["pipeline_state/reporte_tracker.json", "pipeline_state/resumen_semanal.json"],
+      "glifo_json": "glifos/trend-tracker/glifo.json"
     }
   ],
 

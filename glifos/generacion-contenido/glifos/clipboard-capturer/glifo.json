@@ -2,11 +2,22 @@
   "id": "clipboard-capturer",
   "nombre": "Capturador de Portapapeles",
   "tipo": "externo",
-  "lenguaje": "python3",
-  "descripcion": "Lee el portapapeles (donde copiaste la respuesta de la IA) y lo guarda como PDF en Desktop/guiones/",
+  "descripcion": "Lee respuesta_ia.txt del pipeline_state y genera PDF formateado en Desktop/guiones/.",
   "entry": "python3 glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py",
-  "estado": "activo",
-  "panal": "generacion-contenido",
   "actualizable": true,
-  "dependencias": ["content-writer"]
+  "lenguaje": "python3",
+  "inputs": [
+    {"archivo": "pipeline_state/respuesta_ia.txt", "formato": "texto", "descripcion": "Articulo generado por content-writer"}
+  ],
+  "outputs": [
+    {"archivo": "Desktop/guiones/*.pdf", "formato": "pdf", "descripcion": "Articulo formateado como PDF"}
+  ],
+  "dependencias": ["content-writer"],
+  "config": {
+    "carpeta_destino": "Desktop/guiones/",
+    "formato": "A4, reportlab",
+    "fallback": "TXT si reportlab no disponible"
+  },
+  "panal": "generacion-contenido",
+  "version": "2.0"
 }

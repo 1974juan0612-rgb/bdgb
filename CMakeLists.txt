@@ -18,6 +18,7 @@ add_executable(bdgb
     src/nlp.c
     src/agent.c
     src/glifo.c
+    src/json.c
     src/util.c
     crypt/bdgb_crypt.c
 )
@@ -34,6 +35,7 @@ add_executable(bdgb_test
     src/nlp.c
     src/agent.c
     src/glifo.c
+    src/json.c
     src/util.c
     crypt/bdgb_crypt.c
 )

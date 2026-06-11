@@ -1,0 +1,20 @@
+{
+  "id": "generacion-contenido",
+  "nombre": "Orquestador Generacion de Contenido",
+  "tipo": "nativo",
+  "descripcion": "Orquestador generico compilado en binario BDGB. Lee semilla.json del panal, ejecuta pipeline declarado en config.pipeline o pipeline.orden secuencialmente. Cada paso ejecuta su entry, maneja errores como ERROR o WARN (cleanup).",
+  "entry": "bdgb --glifo-run generacion-contenido",
+  "actualizable": false,
+  "lenguaje": "c99",
+  "inputs": [],
+  "outputs": [],
+  "dependencias": [],
+  "config": {
+    "pipeline": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"],
+    "tipo_orquestacion": "generica — lee semilla.json del panal",
+    "formatos_soporte": ["config.pipeline (array strings)", "pipeline.orden (array objetos)", "glifos (orden declaracion)"],
+    "manejo_errores": "ERROR detiene pipeline, WARN continua (cleanup)"
+  },
+  "panal": "generacion-contenido",
+  "version": "2.0"
+}
