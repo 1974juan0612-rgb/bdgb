@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "nombre-del-panal-o-colmena",
   "nombre": "Nombre Humano",
   "tipo": "panal | colmena",
@@ -57,7 +57,7 @@
       "id": "glifo-externo",
       "nombre": "Glifo Externo",
       "tipo": "externo",
-      "entry": "python3 glifos/<panal>/glifos/glifo-externo/script.py",
+      "entry": "python glifos/<panal>/glifos/glifo-externo/script.py",
       "lenguaje": "python3",
       "actualizable": true,
       "glifo_principal": false,

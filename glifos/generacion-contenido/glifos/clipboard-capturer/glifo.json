@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "clipboard-capturer",
   "nombre": "Capturador de Portapapeles",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Lee respuesta_ia.txt del pipeline_state y genera PDF formateado en Desktop/guiones/.",
-  "entry": "python3 glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py",
+  "entry": "python glifos/generacion-contenido/glifos/clipboard-capturer/capturer.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [

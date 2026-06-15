@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "trend-tracker",
   "nombre": "Trend Tracker Diario",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal. Segundo paso del pipeline.",
-  "entry": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
+  "entry": "python glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [

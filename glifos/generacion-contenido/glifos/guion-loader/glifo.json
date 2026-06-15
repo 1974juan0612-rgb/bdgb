@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "guion-loader",
   "nombre": "Cargador de Guion desde PDF",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Busca el PDF mas reciente en ~/Desktop/guiones/, extrae el texto, lo guarda en pipeline_state/guion.txt junto con metadatos.",
-  "entry": "python3 glifos/generacion-contenido/glifos/guion-loader/guion_loader.py",
+  "entry": "python glifos/generacion-contenido/glifos/guion-loader/guion_loader.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [],

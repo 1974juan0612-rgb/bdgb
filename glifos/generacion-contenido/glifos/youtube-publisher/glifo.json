@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "youtube-publisher",
   "nombre": "Publicador de Video en YouTube",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Abre YouTube Studio en Chrome via CDP con sesion del usuario, sube video.mp4 de pipeline_state al canal 'glifos', llena titulo/descripcion y publica.",
-  "entry": "python3 glifos/generacion-contenido/glifos/youtube-publisher/youtube_publisher.py",
+  "entry": "python glifos/generacion-contenido/glifos/youtube-publisher/youtube_publisher.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [

@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "content-writer",
   "nombre": "Redactor de Articulos IA",
   "tipo": "externo",
   "glifo_principal": true,
   "descripcion": "Abre ChatGPT en navegador via CDP, escribe prompt natural, espera respuesta y la extrae. La IA no sabe que es un glifo.",
-  "entry": "python3 glifos/generacion-contenido/glifos/content-writer/writer.py",
+  "entry": "python glifos/generacion-contenido/glifos/content-writer/writer.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [

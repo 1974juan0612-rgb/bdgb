@@ -1,4 +1,4 @@
-{
+﻿{
   "id": "vigilancia-tendencias",
   "nombre": "Vigilancia de Tendencias",
   "tipo": "panal",
@@ -35,7 +35,7 @@
       "id": "estrutura",
       "nombre": "Verificador de Estructura",
       "tipo": "externo",
-      "entry": "python3 glifos/generacion-contenido/glifos/estrutura/estrutura.py",
+      "entry": "python glifos/generacion-contenido/glifos/estrutura/estrutura.py",
       "lenguaje": "python3",
       "actualizable": true,
       "descripcion": "Verifica que todos los directorios, archivos y recursos necesarios existen. Crea lo que falta.",
@@ -58,7 +58,7 @@
       "id": "trend-tracker",
       "nombre": "Trend Tracker Diario",
       "tipo": "externo",
-      "entry": "python3 glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
+      "entry": "python glifos/vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
       "lenguaje": "python3",
       "actualizable": true,
       "descripcion": "Google Trends + pytrends, reporte JSON/PDF, resumen semanal",

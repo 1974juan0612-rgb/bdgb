@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "cleanup",
   "nombre": "Limpiador de Recursos",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Cierra Chrome/Edge abiertos por content-writer, libera puertos CDP, elimina pipeline_state/.",
-  "entry": "python3 glifos/generacion-contenido/glifos/cleanup/cleaner.py",
+  "entry": "python glifos/generacion-contenido/glifos/cleanup/cleaner.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [],

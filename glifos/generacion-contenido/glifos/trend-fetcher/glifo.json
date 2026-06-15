@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "trend-fetcher",
   "nombre": "Buscador de Tendencias",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Obtiene tendencias de internet (Google Trends RSS + pytrends). Primer paso del pipeline.",
-  "entry": "python3 glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
+  "entry": "python glifos/generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [],

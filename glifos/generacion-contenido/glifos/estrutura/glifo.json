@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "estrutura",
   "nombre": "Verificador de Estructura",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Corrobora que todos los requisitos y espacios necesarios para que el panal funcione. Crea lo que falta y advierte lo que requiere intervencion manual. Valido desde glifo hasta familia.",
-  "entry": "python3 glifos/generacion-contenido/glifos/estrutura/estrutura.py",
+  "entry": "python glifos/generacion-contenido/glifos/estrutura/estrutura.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [],

@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "authority-selector",
   "nombre": "Selector por Autoridad",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Recibe tendencias y elige la de mayor autoridad (score + categoria + longitud). Segundo paso del pipeline.",
-  "entry": "python3 glifos/generacion-contenido/glifos/authority-selector/selector.py",
+  "entry": "python glifos/generacion-contenido/glifos/authority-selector/selector.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [

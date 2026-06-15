@@ -1,10 +1,10 @@
-{
+﻿{
   "id": "notebook-video",
   "nombre": "Generador de Video via NotebookLM",
   "tipo": "externo",
   "glifo_principal": false,
   "descripcion": "Abre NotebookLM en Chrome via CDP, crea cuaderno, adjunta guion.txt de pipeline_state, activa creacion de video, descarga a ~/Desktop/videos/ y copia a pipeline_state/video.mp4.",
-  "entry": "python3 glifos/generacion-contenido/glifos/notebook-video/notebook_video.py",
+  "entry": "python glifos/generacion-contenido/glifos/notebook-video/notebook_video.py",
   "actualizable": true,
   "lenguaje": "python3",
   "inputs": [
