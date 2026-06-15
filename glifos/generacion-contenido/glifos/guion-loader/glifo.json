@@ -1,0 +1,33 @@
+{
+  "id": "guion-loader",
+  "nombre": "Cargador de Guion desde PDF",
+  "tipo": "externo",
+  "glifo_principal": false,
+  "descripcion": "Busca el PDF mas reciente en ~/Desktop/guiones/, extrae el texto, lo guarda en pipeline_state/guion.txt junto con metadatos.",
+  "entry": "python3 glifos/generacion-contenido/glifos/guion-loader/guion_loader.py",
+  "actualizable": true,
+  "lenguaje": "python3",
+  "inputs": [],
+  "outputs": [
+    {"archivo": "pipeline_state/guion.txt", "formato": "texto", "descripcion": "Texto extraido del PDF"},
+    {"archivo": "pipeline_state/guion_meta.json", "formato": "json", "descripcion": "Metadatos del guion (fuente, titulo, longitud)"}
+  ],
+  "dependencias": ["clipboard-capturer"],
+  "dependencias_opcionales": ["pip:pdfplumber", "pip:PyPDF2", "pip:pdfminer.six"],
+  "tiempo": {
+    "modalidad": "dirigido",
+    "inicio": {"trigger": "dependencia", "via": "PDF en ~/Desktop/guiones/"},
+    "fin": {"tipo": "senal", "descripcion": "guion.txt + guion_meta.json en pipeline_state"}
+  },
+  "bibliotecario": {
+    "recursos": [],
+    "credenciales": {},
+    "permisos": ["read:~/Desktop/guiones", "write:pipeline_state"]
+  },
+  "config": {
+    "fuente": "~/Desktop/guiones/*.pdf (mas reciente por fecha)",
+    "fallback": "*.txt hermano si no hay libreria PDF"
+  },
+  "panal": "generacion-contenido",
+  "version": "1.0"
+}

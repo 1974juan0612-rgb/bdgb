@@ -46,7 +46,7 @@ def kill_chrome_cdp():
 def kill_port_processes(ports=None):
     """Mata procesos escuchando en los puertos CDP."""
     if ports is None:
-        ports = [9222, 9223, 9224, 9225]
+        ports = [9222, 9223, 9224, 9225, 9333, 9444]
     killed = 0
     if os.name == "nt":
         for port in ports:

@@ -2,7 +2,7 @@
   "id": "generacion-contenido",
   "nombre": "Generacion de Contenido desde Tendencias",
   "tipo": "panal",
-  "descripcion": "Busca tendencias en internet, selecciona la mas relevante por autoridad, genera un articulo profundo con IA via navegador CDP y lo guarda como PDF en el escritorio",
+  "descripcion": "Pipeline completo: tendencias → articulo IA via CDP → PDF en escritorio → extraer guion → video NotebookLM → publicar en YouTube canal glifos",
   "estado": "activo",
   "version": "2.0",
   "rama": "online",
@@ -19,7 +19,7 @@
   },
 
   "config": {
-    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup"]
+    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "guion-loader", "notebook-video", "youtube-publisher", "cleanup"]
   },
 
   "glifos": [
@@ -84,13 +84,49 @@
       "glifo_json": "glifos/clipboard-capturer/glifo.json"
     },
     {
+      "id": "guion-loader",
+      "nombre": "Cargador de Guion desde PDF",
+      "tipo": "externo",
+      "entry": "python3 glifos/generacion-contenido/glifos/guion-loader/guion_loader.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Busca PDF mas reciente en ~/Desktop/guiones/, extrae texto a pipeline_state/guion.txt",
+      "inputs": [],
+      "outputs": ["pipeline_state/guion.txt", "pipeline_state/guion_meta.json"],
+      "glifo_json": "glifos/guion-loader/glifo.json"
+    },
+    {
+      "id": "notebook-video",
+      "nombre": "Generador de Video via NotebookLM",
+      "tipo": "externo",
+      "entry": "python3 glifos/generacion-contenido/glifos/notebook-video/notebook_video.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Abre NotebookLM en Chrome via CDP, crea cuaderno, adjunta guion, genera video, descarga",
+      "inputs": ["pipeline_state/guion.txt"],
+      "outputs": ["pipeline_state/video.mp4"],
+      "glifo_json": "glifos/notebook-video/glifo.json"
+    },
+    {
+      "id": "youtube-publisher",
+      "nombre": "Publicador de Video en YouTube",
+      "tipo": "externo",
+      "entry": "python3 glifos/generacion-contenido/glifos/youtube-publisher/youtube_publisher.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Abre YouTube Studio via CDP, sube video al canal glifos, publica",
+      "inputs": ["pipeline_state/video.mp4", "pipeline_state/guion_meta.json"],
+      "outputs": ["pipeline_state/publicado.json"],
+      "glifo_json": "glifos/youtube-publisher/glifo.json"
+    },
+    {
       "id": "cleanup",
       "nombre": "Limpiador de Recursos",
       "tipo": "externo",
       "entry": "python3 glifos/generacion-contenido/glifos/cleanup/cleaner.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Cierra Chrome/Edge lanzados por content-writer, libera puertos CDP, limpia pipeline_state/",
+      "descripcion": "Cierra Chrome/Edge lanzados por content-writer, notebook-video, youtube-publisher; libera puertos CDP; limpia pipeline_state/",
       "inputs": [],
       "outputs": [],
       "glifo_json": "glifos/cleanup/glifo.json"
@@ -121,6 +157,27 @@
     },
     {
       "de": "clipboard-capturer",
+      "a": "guion-loader",
+      "tipo": "archivo",
+      "flujo": "clipboard-capturer genera PDF en ~/Desktop/guiones/, guion-loader lo lee y extrae texto",
+      "protocolo": "~/Desktop/guiones/<ultimo>.pdf"
+    },
+    {
+      "de": "guion-loader",
+      "a": "notebook-video",
+      "tipo": "datos",
+      "flujo": "guion-loader escribe pipeline_state/guion.txt, notebook-video lo usa como fuente en NotebookLM",
+      "protocolo": "pipeline_state/guion.txt"
+    },
+    {
+      "de": "notebook-video",
+      "a": "youtube-publisher",
+      "tipo": "archivo",
+      "flujo": "notebook-video descarga y copia video a pipeline_state/video.mp4, youtube-publisher lo sube",
+      "protocolo": "pipeline_state/video.mp4"
+    },
+    {
+      "de": "youtube-publisher",
       "a": "cleanup",
       "tipo": "cierre",
       "flujo": "cleanup cierra Chrome, libera puertos CDP, elimina pipeline_state/",
@@ -135,7 +192,7 @@
         "glifo": "estrutura",
         "accion": "verify",
         "args": [],
-        "descripcion": "Verificar estructura del panal: directorios, archivos, recursos. Crear lo faltante. Informar errores."
+        "descripcion": "Verificar estructura del panal: directorios, archivos, recursos. Crear lo faltante."
       },
       {
         "paso": 1,
@@ -171,10 +228,34 @@
       },
       {
         "paso": 5,
+        "glifo": "guion-loader",
+        "accion": "extract",
+        "args": [],
+        "dependencias": ["clipboard-capturer"],
+        "descripcion": "Leer PDF mas reciente de ~/Desktop/guiones/, extraer texto a pipeline_state/guion.txt"
+      },
+      {
+        "paso": 6,
+        "glifo": "notebook-video",
+        "accion": "cdp-notebooklm",
+        "args": [],
+        "dependencias": ["guion-loader"],
+        "descripcion": "Abrir NotebookLM en Chrome via CDP, crear cuaderno, adjuntar guion, generar video, descargar a pipeline_state/video.mp4"
+      },
+      {
+        "paso": 7,
+        "glifo": "youtube-publisher",
+        "accion": "cdp-youtube",
+        "args": [],
+        "dependencias": ["notebook-video"],
+        "descripcion": "Abrir YouTube Studio en Chrome via CDP, subir video al canal glifos, publicar"
+      },
+      {
+        "paso": 8,
         "glifo": "cleanup",
         "accion": "clean",
         "args": [],
-        "dependencias": ["clipboard-capturer"],
+        "dependencias": ["youtube-publisher"],
         "descripcion": "Cerrar Chrome/Edge, liberar puertos CDP, limpiar pipeline_state/"
       }
     ]
@@ -184,8 +265,15 @@
     "protocolo_comunicacion": "pipeline_state/ — archivos JSON/txt temporales. Cada glifo lee inputs de ahi y escribe outputs.",
     "fuentes": ["google-trends-rss", "pytrends-api", "mock-internet"],
     "criterio_autoridad": "score + volumen de busqueda",
-    "formato_salida": "PDF",
-    "carpeta_destino": "Desktop/guiones/",
+    "formato_salida": "PDF → Video MP4 → YouTube",
+    "carpeta_destino_guion": "Desktop/guiones/",
+    "carpeta_destino_video": "~/Desktop/videos/",
+    "canal_youtube": "glifos",
+    "cdp_puertos": {
+      "content-writer": 9222,
+      "notebook-video": 9333,
+      "youtube-publisher": 9444
+    },
     "ia_modo": "navegador CDP (automatico via Chrome DevTools Protocol, o interactivo como fallback)",
     "ia_config": {
       "url_web": "https://chatgpt.com",
@@ -201,6 +289,8 @@
     "exitosas": 0,
     "fallidas": 0,
     "ultima_ejecucion": null,
-    "articulos_generados": 0
+    "articulos_generados": 0,
+    "videos_generados": 0,
+    "videos_publicados": 0
   }
 }

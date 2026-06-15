@@ -22,7 +22,7 @@
   },
   "config": {
     "accion": "matar procesos Chrome/Edge + eliminar pipeline_state/",
-    "puertos_cdp": [9222, 9223, 9224, 9225]
+    "puertos_cdp": [9222, 9223, 9224, 9225, 9333, 9444]
   },
   "panal": "generacion-contenido",
   "version": "2.0"
