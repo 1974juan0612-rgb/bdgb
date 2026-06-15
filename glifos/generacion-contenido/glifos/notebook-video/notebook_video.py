@@ -122,15 +122,15 @@ def main():
 
     # buscar el video descargado mas reciente
     videos_dir = os.path.expanduser("~/Desktop/videos")
-    if os.path.isdir(videos_dir):
-        import glob
-        videos = glob.glob(os.path.join(videos_dir, "*"))
-        if videos:
-            latest = max(videos, key=os.path.getmtime)
-            dest = os.path.join(STATE_DIR, "video.mp4")
-            import shutil
-            shutil.copy2(latest, dest)
-            print(f"[NOTEBOOK-VIDEO] Video copiado: {dest}")
+    os.makedirs(videos_dir, exist_ok=True)
+    import glob
+    videos = glob.glob(os.path.join(videos_dir, "*"))
+    if videos:
+        latest = max(videos, key=os.path.getmtime)
+        dest = os.path.join(STATE_DIR, "video.mp4")
+        import shutil
+        shutil.copy2(latest, dest)
+        print(f"[NOTEBOOK-VIDEO] Video copiado: {dest}")
 
     # cerrar Chrome
     try:

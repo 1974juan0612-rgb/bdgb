@@ -67,6 +67,12 @@ def main():
     # 1. Directorios base del panal
     ensure_dir(STATE_DIR, "pipeline_state — comunicacion entre glifos")
 
+    # 1b. Directorios externos que los glifos necesitan
+    guiones_dir = os.path.expanduser("~/Desktop/guiones")
+    videos_dir = os.path.expanduser("~/Desktop/videos")
+    ensure_dir(guiones_dir, "PDFs generados por clipboard-capturer")
+    ensure_dir(videos_dir, "videos descargados por notebook-video")
+
     # 2. Prompts si hay bibliotecario que los referencie
     biblio = semilla.get("bibliotecario", {})
     recursos = biblio.get("recursos", [])
