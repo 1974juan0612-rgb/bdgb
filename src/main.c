@@ -7,6 +7,7 @@
 #include "nlp.h"
 #include "agent.h"
 #include "glifo.h"
+#include "mmia.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -247,6 +248,9 @@ int main(int argc, char *argv[]) {
     }
     if (strcmp(argv[1], "--show-terms") == 0) { nlp_list_terms(); return 0; }
 
+    if (strcmp(argv[1], "--chat") == 0) return mmia_run_interactive();
+    if (strcmp(argv[1], "--mmia") == 0 && argc >= 3) return mmia_process_direct(argv[2]);
+
     if (strcmp(argv[1], "--encrypt") == 0 && argc >= 4) {
         return bdgb_encrypt_file(argv[2], argv[3], argc > 4 ? argv[4] : "bdgb-default-key");
     }
@@ -269,6 +273,8 @@ int main(int argc, char *argv[]) {
 
     fprintf(stderr, "Uso: bdgb [--data-path <path>] <comando>\n");
     fprintf(stderr, "  (sin args)     modo interactivo\n");
+    fprintf(stderr, "  --chat         MMIA: modo consola interactiva\n");
+    fprintf(stderr, "  --mmia <txt>   MMIA: tarea directa\n");
     fprintf(stderr, "  --search <q>   busqueda NLP, salida JSON\n");
     fprintf(stderr, "  --export-nodes dump JSON de todos los nodos\n");
     fprintf(stderr, "  --add-concept <n> <c> <w> <r>\n");

@@ -20,6 +20,7 @@ add_executable(bdgb
     src/glifo.c
     src/json.c
     src/util.c
+    src/mmia_module.c
     crypt/bdgb_crypt.c
 )
 
