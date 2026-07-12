@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Glifo content-writer: abre IA en navegador via Chrome DevTools Protocol (WebSocket).
-   CDP permite control preciso del navegador sin coordenadas de pantalla.
-   Totalmente automatico. Sin API key. La IA recibe un prompt natural como usuario humano."""
+"""Glifo content-writer: abre ChatGPT en navegador via Chrome DevTools Protocol (WebSocket).
+CDP permite control preciso del navegador sin coordenadas de pantalla.
+Funciona y no lo tocamos - el problema era solo con NotebookLM."""
 
 import json, os, sys, subprocess, time, tempfile, socket, random
 from datetime import datetime
@@ -14,7 +14,7 @@ OUTPUT_FILE = os.path.join(STATE_DIR, "respuesta_ia.txt")
 AI_URL = os.environ.get("BDGB_AI_WEB_URL", "https://chatgpt.com")
 
 ws = None
-
+CHROME_PID = None
 
 def ensure_ws():
     global ws
@@ -22,14 +22,12 @@ def ensure_ws():
         import websocket
         ws = websocket
 
-
 def find_free_port():
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.bind(("127.0.0.1", 0))
     port = s.getsockname()[1]
     s.close()
     return port
-
 
 def find_browser():
     candidates = [
@@ -42,25 +40,14 @@ def find_browser():
     for path, name in candidates:
         if os.path.exists(path):
             return path, name
-    path2, name2 = "chrome", "chrome"
-    return path2, name2
-
+    return "chrome", "chrome"
 
 def launch_chrome(cdp_port):
     ensure_ws()
     path, name = find_browser()
     if not path or not os.path.exists(path):
-        print(f"[content-writer] Chrome no encontrado en rutas conocidas")
-        print(f"[content-writer] Usando 'chrome' como comando")
+        print(f"[content-writer] Chrome no encontrado en rutas conocidas, usando 'chrome' como comando")
         path = "chrome"
-
-    try:
-        if os.name == "nt":
-            subprocess.run(["taskkill", "/F", "/IM", "chrome.exe"],
-                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-            time.sleep(1)
-    except:
-        pass
 
     user_dir = os.path.join(tempfile.gettempdir(), f"bdgb_cdp_{cdp_port}")
     if os.path.exists(user_dir):
@@ -72,6 +59,7 @@ def launch_chrome(cdp_port):
 
     print(f"[content-writer] Lanzando Chrome en puerto {cdp_port}...")
     try:
+        global CHROME_PID
         proc = subprocess.Popen(
             [path, f"--remote-debugging-port={cdp_port}",
              "--remote-allow-origins=*",
@@ -80,12 +68,12 @@ def launch_chrome(cdp_port):
              f"--window-size=1280,800",
              AI_URL],
             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"[content-writer] Chrome PID: {proc.pid}")
+        CHROME_PID = proc.pid
+        print(f"[content-writer] Chrome PID: {CHROME_PID}")
         return True
     except Exception as e:
         print(f"[content-writer] Error lanzando Chrome: {e}")
         return False
-
 
 def cdp_connect(cdp_port, retries=30):
     ensure_ws()
@@ -112,7 +100,6 @@ def cdp_connect(cdp_port, retries=30):
             time.sleep(1)
     return None
 
-
 def cdp_send(conn, method, params=None):
     if params is None:
         params = {}
@@ -120,7 +107,6 @@ def cdp_send(conn, method, params=None):
     conn.send(msg)
     resp = conn.recv()
     return json.loads(resp)
-
 
 def cdp_evaluate(conn, expression):
     msg_id = random.randint(1000, 999999)
@@ -145,19 +131,6 @@ def cdp_evaluate(conn, expression):
         except:
             continue
     return ""
-
-def cdp_wait_event(conn, event_name, timeout=30):
-    start = time.time()
-    while time.time() - start < timeout:
-        try:
-            conn.settimeout(0.5)
-            resp = json.loads(conn.recv())
-            if resp.get("method") == event_name:
-                return resp
-        except:
-            continue
-    return None
-
 
 def interact_with_ai(prompt_text, cdp_port):
     conn = cdp_connect(cdp_port)
@@ -261,7 +234,6 @@ def interact_with_ai(prompt_text, cdp_port):
         return prev_text
     return None
 
-
 def generate_mock(topic):
     return (
         f"# {topic}\n\n"
@@ -281,7 +253,6 @@ def generate_mock(topic):
         f"*{datetime.now().strftime('%Y-%m-%d %H:%M')}*\n"
     )
 
-
 def build_prompt(topic):
     return (f"Eres un periodista experto en tecnologia y cultura digital. "
             f"Escribe un articulo profundo, bien estructurado y detallado en espanol "
@@ -289,7 +260,6 @@ def build_prompt(topic):
             f"Extension: 800-1200 palabras. Incluye introduccion, 3-4 secciones "
             f"con subtitulos, y conclusion.\n\n"
             f"Tema del articulo: {topic}")
-
 
 def main():
     print("[content-writer] Leyendo tema seleccionado...")
@@ -323,10 +293,6 @@ def main():
             text = interact_with_ai(prompt, cdp_port)
         if not text:
             print(f"[content-writer] No se obtuvo respuesta de la IA via CDP.")
-            print(f"[content-writer] Posibles causas:")
-            print(f"[content-writer] 1. No has iniciado sesion en {AI_URL}")
-            print(f"[content-writer] 2. La pagina tardo mucho en cargar")
-            print(f"[content-writer] 3. Chrome no se pudo iniciar con CDP")
             print(f"[content-writer] Generando contenido simulado en su lugar.")
             text = generate_mock(topic)
 
@@ -343,8 +309,16 @@ def main():
 
     print(f"[content-writer] Respuesta guardada en: {OUTPUT_FILE}")
     print(f"[content-writer] Palabras: ~{len(text.split())}")
-    return 0
 
+    # Matar SOLO el Chrome que abrimos (por PID, no mata el Chrome personal)
+    if CHROME_PID:
+        try:
+            subprocess.run(["taskkill", "/F", "/PID", str(CHROME_PID)],
+                           capture_output=True, timeout=5)
+            print(f"[content-writer] Chrome PID {CHROME_PID} cerrado")
+        except:
+            pass
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

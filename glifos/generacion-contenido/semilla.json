@@ -2,7 +2,7 @@
   "id": "generacion-contenido",
   "nombre": "Generacion de Contenido desde Tendencias",
   "tipo": "panal",
-  "descripcion": "Pipeline completo: tendencias → articulo IA via CDP → PDF en escritorio → extraer guion → video NotebookLM → publicar en YouTube canal glifos",
+  "descripcion": "Pipeline completo: tendencias → articulo IA via PyAutoGUI → PDF en escritorio → extraer guion → video NotebookLM → publicar en YouTube canal glifos",
   "estado": "activo",
   "version": "2.0",
   "rama": "online",
@@ -19,7 +19,7 @@
   },
 
   "config": {
-    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "guion-loader", "notebook-video", "youtube-publisher", "cleanup"]
+    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "guion-loader", "notebook-abrir", "notebook-vision", "notebook-cuaderno", "notebook-guion", "notebook-video", "notebook-descargar", "notebook-cerrar", "youtube-subir", "cleanup"]
   },
 
   "glifos": [
@@ -66,7 +66,7 @@
       "entry": "python glifos/generacion-contenido/glifos/content-writer/writer.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Abre ChatGPT en navegador via CDP, escribe prompt natural, extrae respuesta",
+      "descripcion": "Abre ChatGPT en navegador via PyAutoGUI, escribe prompt y extrae respuesta",
       "inputs": ["pipeline_state/tema_seleccionado.json"],
       "outputs": ["pipeline_state/respuesta_ia.txt"],
       "glifo_json": "glifos/content-writer/glifo.json"
@@ -96,28 +96,100 @@
       "glifo_json": "glifos/guion-loader/glifo.json"
     },
     {
-      "id": "notebook-video",
-      "nombre": "Generador de Video via NotebookLM",
+      "id": "notebook-abrir",
+      "nombre": "Abrir NotebookLM",
       "tipo": "externo",
-      "entry": "python glifos/generacion-contenido/glifos/notebook-video/notebook_video.py",
+      "entry": "python glifos/generacion-contenido/glifos/notebook-abrir/abrir.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Abre NotebookLM en Chrome via CDP, crea cuaderno, adjunta guion, genera video, descarga",
-      "inputs": ["pipeline_state/guion.txt"],
-      "outputs": ["pipeline_state/video.mp4"],
+      "descripcion": "Lanza NotebookLM PWA desde acceso directo, hace login si es necesario",
+      "inputs": [],
+      "outputs": [],
+      "glifo_json": "glifos/notebook-abrir/glifo.json"
+    },
+    {
+      "id": "notebook-vision",
+      "nombre": "Vision de Pantalla",
+      "tipo": "externo",
+      "entry": "python glifos/generacion-contenido/glifos/notebook-vision/vision.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Escanea pantalla, detecta botones por color, guarda coordenadas en pipeline_state/vista.json",
+      "inputs": [],
+      "outputs": ["pipeline_state/vista.json"],
+      "glifo_json": "glifos/notebook-vision/glifo.json"
+    },
+    {
+      "id": "notebook-cuaderno",
+      "nombre": "Crear Cuaderno",
+      "tipo": "externo",
+      "entry": "python glifos/generacion-contenido/glifos/notebook-cuaderno/cuaderno.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Hace click en Crear nuevo cuaderno via PyAutoGUI (posicion calibrada)",
+      "inputs": [],
+      "outputs": [],
+      "glifo_json": "glifos/notebook-cuaderno/glifo.json"
+    },
+    {
+      "id": "notebook-guion",
+      "nombre": "Subir PDF a Cuaderno",
+      "tipo": "externo",
+      "entry": "python glifos/generacion-contenido/glifos/notebook-guion/guion.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Sube PDF al cuaderno via PyAutoGUI (click + dialogo nativo)",
+      "inputs": [],
+      "outputs": [],
+      "glifo_json": "glifos/notebook-guion/glifo.json"
+    },
+    {
+      "id": "notebook-video",
+      "nombre": "Generar Video en NotebookLM",
+      "tipo": "externo",
+      "entry": "python glifos/generacion-contenido/glifos/notebook-video/video.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Hace click en Studio + Crear video via PyAutoGUI (posiciones calibradas)",
+      "inputs": [],
+      "outputs": [],
       "glifo_json": "glifos/notebook-video/glifo.json"
     },
     {
-      "id": "youtube-publisher",
-      "nombre": "Publicador de Video en YouTube",
+      "id": "notebook-descargar",
+      "nombre": "Descargar Video",
       "tipo": "externo",
-      "entry": "python glifos/generacion-contenido/glifos/youtube-publisher/youtube_publisher.py",
+      "entry": "python glifos/generacion-contenido/glifos/notebook-descargar/descargar.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Abre YouTube Studio via CDP, sube video al canal glifos, publica",
-      "inputs": ["pipeline_state/video.mp4", "pipeline_state/guion_meta.json"],
+      "descripcion": "Espera que el usuario descargue el video a ~/Desktop/videos/ y lo copia a pipeline_state",
+      "inputs": [],
+      "outputs": ["pipeline_state/video.mp4"],
+      "glifo_json": "glifos/notebook-descargar/glifo.json"
+    },
+    {
+      "id": "notebook-cerrar",
+      "nombre": "Cerrar Cuaderno",
+      "tipo": "externo",
+      "entry": "python glifos/generacion-contenido/glifos/notebook-cerrar/cerrar.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Elimina cuaderno via PyAutoGUI (menu opciones + eliminar + confirmar)",
+      "inputs": [],
+      "outputs": [],
+      "glifo_json": "glifos/notebook-cerrar/glifo.json"
+    },
+    {
+      "id": "youtube-subir",
+      "nombre": "Subir Video a YouTube",
+      "tipo": "externo",
+      "entry": "python glifos/generacion-contenido/glifos/youtube-subir/subir.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Abre YouTube Studio, guia al usuario para subir el video al canal glifos",
+      "inputs": ["pipeline_state/video.mp4"],
       "outputs": ["pipeline_state/publicado.json"],
-      "glifo_json": "glifos/youtube-publisher/glifo.json"
+      "glifo_json": "glifos/youtube-subir/glifo.json"
     },
     {
       "id": "cleanup",
@@ -126,7 +198,7 @@
       "entry": "python glifos/generacion-contenido/glifos/cleanup/cleaner.py",
       "lenguaje": "python3",
       "actualizable": true,
-      "descripcion": "Cierra Chrome/Edge lanzados por content-writer, notebook-video, youtube-publisher; libera puertos CDP; limpia pipeline_state/",
+      "descripcion": "Limpia temporales. No mata procesos del usuario.",
       "inputs": [],
       "outputs": [],
       "glifo_json": "glifos/cleanup/glifo.json"
@@ -164,23 +236,65 @@
     },
     {
       "de": "guion-loader",
-      "a": "notebook-video",
+      "a": "notebook-abrir",
       "tipo": "datos",
-      "flujo": "guion-loader escribe pipeline_state/guion.txt, notebook-video lo usa como fuente en NotebookLM",
+      "flujo": "guion-loader escribe pipeline_state/guion.txt, notebook-abrir arranca NotebookLM",
       "protocolo": "pipeline_state/guion.txt"
     },
     {
+      "de": "notebook-abrir",
+      "a": "notebook-vision",
+      "tipo": "vision",
+      "flujo": "PWA abierta, vision.py escanea pantalla para detectar boton",
+      "protocolo": "coordenadas en pipeline_state/vista.json"
+    },
+    {
+      "de": "notebook-vision",
+      "a": "notebook-cuaderno",
+      "tipo": "datos",
+      "flujo": "vision.py escribe pipeline_state/vista.json, cuaderno.py lo lee y clickea",
+      "protocolo": "pipeline_state/vista.json"
+    },
+    {
+      "de": "notebook-cuaderno",
+      "a": "notebook-guion",
+      "tipo": "pyautogui",
+      "flujo": "Misma PWA, guion.py sube PDF via PyAutoGUI",
+      "protocolo": "coordenadas calibradas + ruta PDF"
+    },
+    {
+      "de": "notebook-guion",
+      "a": "notebook-video",
+      "tipo": "pyautogui",
+      "flujo": "Misma PWA, video.py clickea Studio + Crear video via PyAutoGUI",
+      "protocolo": "coordenadas calibradas"
+    },
+    {
       "de": "notebook-video",
-      "a": "youtube-publisher",
+      "a": "notebook-descargar",
       "tipo": "archivo",
-      "flujo": "notebook-video descarga y copia video a pipeline_state/video.mp4, youtube-publisher lo sube",
+      "flujo": "Usuario descarga video a ~/Desktop/videos/, descargar.py lo copia a pipeline_state",
       "protocolo": "pipeline_state/video.mp4"
     },
     {
-      "de": "youtube-publisher",
+      "de": "notebook-descargar",
+      "a": "notebook-cerrar",
+      "tipo": "pyautogui",
+      "flujo": "Misma PWA, cerrar.py elimina cuaderno via PyAutoGUI",
+      "protocolo": "coordenadas calibradas"
+    },
+    {
+      "de": "notebook-cerrar",
+      "a": "youtube-subir",
+      "tipo": "archivo",
+      "flujo": "youtube-subir sube pipeline_state/video.mp4 al canal glifos",
+      "protocolo": "pipeline_state/video.mp4"
+    },
+    {
+      "de": "youtube-subir",
       "a": "cleanup",
       "tipo": "cierre",
-      "flujo": "cleanup cierra Chrome, libera puertos CDP, elimina pipeline_state/",
+      "flujo": "cleanup limpia temporales y recursos",
       "protocolo": "ninguno"
     }
   ],
@@ -213,10 +327,10 @@
       {
         "paso": 3,
         "glifo": "content-writer",
-        "accion": "cdp-browser",
+        "accion": "pyautogui-browser",
         "args": [],
         "dependencias": ["authority-selector"],
-        "descripcion": "Abrir ChatGPT en Chrome via CDP, escribir prompt, enviar, extraer respuesta a pipeline_state/respuesta_ia.txt"
+        "descripcion": "Abrir ChatGPT en navegador via PyAutoGUI, escribir prompt, enviar, extraer respuesta a pipeline_state/respuesta_ia.txt"
       },
       {
         "paso": 4,
@@ -236,27 +350,75 @@
       },
       {
         "paso": 6,
-        "glifo": "notebook-video",
-        "accion": "cdp-notebooklm",
+        "glifo": "notebook-abrir",
+        "accion": "pyautogui-launch",
         "args": [],
         "dependencias": ["guion-loader"],
-        "descripcion": "Abrir NotebookLM en Chrome via CDP, crear cuaderno, adjuntar guion, generar video, descargar a pipeline_state/video.mp4"
+        "descripcion": "Lanzar NotebookLM PWA desde acceso directo, autologin con PyAutoGUI"
       },
       {
         "paso": 7,
-        "glifo": "youtube-publisher",
-        "accion": "cdp-youtube",
+        "glifo": "notebook-vision",
+        "accion": "vision-scan",
         "args": [],
-        "dependencias": ["notebook-video"],
-        "descripcion": "Abrir YouTube Studio en Chrome via CDP, subir video al canal glifos, publicar"
+        "dependencias": ["notebook-abrir"],
+        "descripcion": "Escanear pantalla con PyAutoGUI, detectar botones por color, guardar coordenadas en pipeline_state/vista.json"
       },
       {
         "paso": 8,
+        "glifo": "notebook-cuaderno",
+        "accion": "pyautogui-click",
+        "args": [],
+        "dependencias": ["notebook-vision"],
+        "descripcion": "Leer coordenadas de vista.json y hacer click en Crear nuevo cuaderno"
+      },
+      {
+        "paso": 9,
+        "glifo": "notebook-guion",
+        "accion": "pyautogui-upload",
+        "args": [],
+        "dependencias": ["notebook-cuaderno"],
+        "descripcion": "Click upload + escribir ruta PDF en dialogo nativo via PyAutoGUI"
+      },
+      {
+        "paso": 10,
+        "glifo": "notebook-video",
+        "accion": "pyautogui-click",
+        "args": [],
+        "dependencias": ["notebook-guion"],
+        "descripcion": "Click Studio tab + Crear video + Crear via PyAutoGUI (posiciones calibradas)"
+      },
+      {
+        "paso": 11,
+        "glifo": "notebook-descargar",
+        "accion": "poll",
+        "args": [],
+        "dependencias": ["notebook-video"],
+        "descripcion": "Esperar que usuario descargue el video a ~/Desktop/videos/, copiarlo a pipeline_state/video.mp4"
+      },
+      {
+        "paso": 12,
+        "glifo": "notebook-cerrar",
+        "accion": "pyautogui-click",
+        "args": [],
+        "dependencias": ["notebook-descargar"],
+        "descripcion": "Eliminar cuaderno via PyAutoGUI (menu opciones + eliminar + confirmar)"
+      },
+      {
+        "paso": 13,
+        "glifo": "youtube-subir",
+        "accion": "semi-auto",
+        "args": [],
+        "dependencias": ["notebook-cerrar"],
+        "descripcion": "Abrir YouTube Studio, guiar al usuario para subir el video al canal glifos y publicar"
+      },
+      {
+        "paso": 14,
         "glifo": "cleanup",
         "accion": "clean",
         "args": [],
-        "dependencias": ["youtube-publisher"],
-        "descripcion": "Cerrar Chrome/Edge, liberar puertos CDP, limpiar pipeline_state/"
+        "dependencias": ["youtube-subir"],
+        "descripcion": "Limpiar temporales. No mata procesos."
       }
     ]
   },
@@ -269,18 +431,14 @@
     "carpeta_destino_guion": "Desktop/guiones/",
     "carpeta_destino_video": "~/Desktop/videos/",
     "canal_youtube": "glifos",
-    "cdp_puertos": {
-      "content-writer": 9222,
-      "notebook-video": 9333,
-      "youtube-publisher": 9444
-    },
-    "ia_modo": "navegador CDP (automatico via Chrome DevTools Protocol, o interactivo como fallback)",
+    "ia_modo": "PyAutoGUI (automatizacion de UI por coordenadas/imagenes)",
     "ia_config": {
       "url_web": "https://chatgpt.com",
-      "metodo": "CDP WebSocket → JavaScript → prompt → Enter → extraer respuesta",
-      "dependencias": "websocket-client (pip install)",
+      "metodo": "PyAutoGUI → mouse click → teclear prompt → Enter → extraer respuesta",
+      "dependencias": "pyautogui, pillow, pygetwindow (pip install)",
       "variable_entorno_sitio": "BDGB_AI_WEB_URL",
-      "variable_entorno_modo": "BDGB_AI_MODE (browser | mock)"
+      "variable_entorno_modo": "BDGB_AI_MODE (browser | mock)",
+      "calibracion": "python calibrar.py para guardar posiciones de botones"
     }
   },
 

@@ -1,0 +1,18 @@
+{
+    "id": "notebook-cuaderno",
+    "nombre": "Crear Cuaderno",
+    "descripcion": "Click en Crear nuevo cuaderno via PyAutoGUI (posicion calibrada)",
+    "glifo_principal": true,
+    "inputs": [],
+    "outputs": [],
+    "tiempo": {
+        "modalidad": "automatico",
+        "inicio": "NotebookLM abierto",
+        "fin": "Cuaderno creado"
+    },
+    "bibliotecario": {
+        "recursos": ["gui_utils.py", "guias/notebooklm_calib.json"],
+        "credenciales": [],
+        "permisos": []
+    }
+}

@@ -1,0 +1,18 @@
+{
+    "id": "youtube-subir",
+    "nombre": "Subir a YouTube",
+    "descripcion": "Abre YouTube Studio y guia al usuario para subir el video al canal glifos",
+    "glifo_principal": true,
+    "inputs": ["pipeline_state/video.mp4"],
+    "outputs": ["pipeline_state/publicado.json"],
+    "tiempo": {
+        "modalidad": "input-manual",
+        "inicio": "Video en pipeline_state",
+        "fin": "Video publicado en canal glifos"
+    },
+    "bibliotecario": {
+        "recursos": ["Chrome"],
+        "credenciales": [],
+        "permisos": ["red"]
+    }
+}

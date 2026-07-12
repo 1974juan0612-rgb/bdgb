@@ -3,6 +3,7 @@
 #include "nlp.h"
 #include "util.h"
 #include "json.h"
+#include "mmia.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -135,10 +136,6 @@ int glifo_load_systems(void) {
 int glifo_run(const char *id, const char *args) {
     for (int i = 0; i < glifo_count; i++) {
         if (strcmp(glifos[i].id, id) == 0) {
-            if (glifos[i].sistema[0] == 0) {
-                printf("[GLIFO] Error: '%s' no pertenece a ningun sistema activo\n", id);
-                return GLIFO_ERR;
-            }
             glifos[i].ejecuciones++;
             int r = glifos[i].run(args ? args : "");
             if (r == 0) glifos[i].exitosas++;
@@ -660,6 +657,18 @@ int glifo_primo_run(const char *args) {
 }
 
 /* ============================================================
+ *   GLIFO MMIA — wrapper para el sistema orbital
+ * ============================================================ */
+
+int glifo_mmia_run(const char *args) {
+    if (args && args[0]) {
+        return mmia_process_direct(args);
+    } else {
+        return mmia_run_interactive();
+    }
+}
+
+/* ============================================================
  *   INIT
  * ============================================================ */
 
@@ -670,6 +679,8 @@ int glifo_init(void) {
                    glifo_generacion_contenido_run);
     glifo_register("vigilancia-tendencias", "Orquestador Vigilancia de Tendencias",
                    glifo_vigilancia_run);
+    glifo_register("mmia", "MMIA - Sistema Orbital Subconsciente",
+                   glifo_mmia_run);
     glifo_load_systems();
     return glifo_count;
 }

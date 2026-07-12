@@ -1,0 +1,8 @@
+# 1. Cierra Chrome completamente
+# 2. Ejecuta ESTO en PowerShell (una sola linea):
+
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9444 --remote-allow-origins=* --user-data-dir="$env:TEMP\cdp_notebooklm" --no-first-run https://notebooklm.google.com
+
+# 3. Inicia sesion en NotebookLM si es necesario
+# 4. Cuando estes en la pagina principal de NotebookLM (con los cuadernos visibles),
+#    ejecuta este script:

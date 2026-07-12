@@ -21,6 +21,7 @@ add_executable(bdgb
     src/json.c
     src/util.c
     src/mmia_module.c
+    src/rae.c
     crypt/bdgb_crypt.c
 )
 
@@ -38,6 +39,8 @@ add_executable(bdgb_test
     src/glifo.c
     src/json.c
     src/util.c
+    src/rae.c
+    src/mmia_module.c
     crypt/bdgb_crypt.c
 )
 target_compile_definitions(bdgb_test PRIVATE BDGB_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

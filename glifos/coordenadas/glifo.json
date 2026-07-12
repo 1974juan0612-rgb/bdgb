@@ -1,0 +1,22 @@
+{
+  "id": "coordenadas",
+  "nombre": "Orquestador Lector de Coordenadas",
+  "tipo": "nativo",
+  "glifo_principal": false,
+  "descripcion": "Orquestador del panal coordenadas. Lee semilla.json, ejecuta pipeline.",
+  "entry": "bdgb --glifo-run coordenadas",
+  "actualizable": false,
+  "lenguaje": "python3",
+  "inputs": [],
+  "outputs": [],
+  "bibliotecario": {
+    "recursos": [],
+    "credenciales": {},
+    "permisos": ["exec:python"]
+  },
+  "config": {
+    "pipeline": ["coordenadas-reader"]
+  },
+  "panal": "coordenadas",
+  "version": "1.0"
+}

@@ -16,6 +16,10 @@
 #include <time.h>
 #include <ctype.h>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -23,6 +27,15 @@
 #endif
 
 #include "mmia.h"
+#include "semantics.h"
+#include "rae.h"
+#include "concept_graph.h"
+#include "nlp.h"
+#include "rae.h"
+
+/* modo silencioso para conversacion */
+static int mmia_quiet = 0;
+static void mmia_set_quiet(int q) { mmia_quiet = q; }
 
 /* ================================================================
  * CONFIGURACION
@@ -286,6 +299,10 @@ int orbital_next_task(struct OrbitalSystem *sys);
 void orbital_clear_tasks(struct OrbitalSystem *sys);
 void orbital_list_directory(const char *path);
 int crear_proyecto(struct OrbitalSystem *sys, const char *tipo, const char *nombre);
+void orbital_register_module(struct OrbitalSystem *sys, int idx);
+void orbital_save_binary(struct OrbitalSystem *sys, const char *path);
+int orbital_load_binary(struct OrbitalSystem *sys, const char *path);
+void mmia_data_path(char *buf, size_t bufsz);
 
 float module_resonance(OrbitalModule *m, Vec context) {
     int p = m->properties.n < context.n ? m->properties.n : context.n;
@@ -483,6 +500,11 @@ void orbital_init(OrbitalSystem *sys, int p, float theta, float dt) {
     sys->project_type[0] = 0;
 
     orbital_load_tools(sys, "mmia_tools.json");
+
+    /* Registrar modulos innatos en concept graph */
+    for (int i = 0; i < sys->n_modules; i++)
+        orbital_register_module(sys, i);
+    nlp_save();
 }
 
 void orbital_free(OrbitalSystem *sys) {
@@ -515,6 +537,236 @@ void orbital_add_module(OrbitalSystem *sys, const char *name,
     m->usage_count = 0;
     m->is_active = 0;
     m->num_asociaciones = 0;
+    orbital_register_module(sys, sys->n_modules - 1);
+}
+
+/* ---- BDGB concept graph integration ---- */
+#define MMIA_MODULE_BASE 10000
+
+void orbital_register_module(OrbitalSystem *sys, int idx) {
+    if (idx < 0 || idx >= sys->n_modules) return;
+    OrbitalModule *m = &sys->modules[idx];
+    uint16_t cid = (uint16_t)(MMIA_MODULE_BASE + idx);
+    uint8_t node_id = (uint8_t)(cid % BDGB_GRID_NODES);
+
+    nlp_add_term(m->name, cid, NULL, -1, -1);
+    add_concept(node_id, cid, 200, REL_DEFINICION);
+
+    uint8_t rtype = 0;
+    switch (m->tipo) {
+        case TIPO_OBJETO:       rtype = REL_SUSTANTIVO; break;
+        case TIPO_CUALIDAD:     rtype = REL_ADJETIVO; break;
+        case TIPO_ACCION:       rtype = REL_VERBO; break;
+        case TIPO_CONOCIMIENTO: rtype = REL_FUNCION; break;
+        case TIPO_INNATE:       rtype = REL_METAFORA; break;
+    }
+    if (rtype)
+        add_concept_edge(cid, 10000, 200, (uint8_t)rtype);
+
+    for (int a = 0; a < m->num_asociaciones; a++) {
+        int did = m->asociaciones[a].dest_id;
+        if (did >= 0 && did < sys->n_modules) {
+            uint16_t dc = (uint16_t)(MMIA_MODULE_BASE + did);
+            uint8_t rel = (m->asociaciones[a].tipo_asoc == 0) ? REL_FUNCION :
+                          (m->asociaciones[a].tipo_asoc == 1) ? REL_PERTENECE : REL_DEFINICION;
+            add_concept_edge(cid, dc, (uint8_t)(m->asociaciones[a].peso * 255), rel);
+        }
+    }
+}
+
+/* ---- Binary persistence ---- */
+#define MMIA_STATE_FILE "mmia_state.dat"
+#define MMIA_MAGIC "MMIA"
+#define MMIA_VERSION 1
+
+void mmia_data_path(char *buf, size_t bufsz) {
+    const char *env = getenv("BDGB_DATA");
+    if (env)
+        snprintf(buf, bufsz, "%s/%s", env, MMIA_STATE_FILE);
+    else
+        snprintf(buf, bufsz, "%s", MMIA_STATE_FILE);
+}
+
+void orbital_save_binary(OrbitalSystem *sys, const char *path) {
+    (void)sys;
+    FILE *f = fopen(path, "wb");
+    if (!f) { fprintf(stderr, "error: no se pudo escribir %s\n", path); return; }
+
+    uint16_t n_save = 0;
+    for (int i = 4; i < sys->n_modules; i++)
+        if (sys->modules[i].source == 1 || sys->modules[i].tipo == TIPO_ACCION)
+            n_save++;
+
+    fwrite(MMIA_MAGIC, 1, 4, f);
+    uint16_t ver = MMIA_VERSION;
+    fwrite(&ver, sizeof(ver), 1, f);
+    fwrite(&sys->t, sizeof(sys->t), 1, f);
+    fwrite(&n_save, sizeof(n_save), 1, f);
+
+    for (int i = 4; i < sys->n_modules; i++) {
+        OrbitalModule *m = &sys->modules[i];
+        if (!(m->source == 1 || m->tipo == TIPO_ACCION)) continue;
+
+        uint8_t nlen = (uint8_t)strlen(m->name);
+        if (nlen > 63) nlen = 63;
+        fwrite(&nlen, 1, 1, f);
+        fwrite(m->name, 1, nlen, f);
+
+        uint8_t src = (uint8_t)m->source;
+        uint8_t tipo = (uint8_t)m->tipo;
+        fwrite(&src, 1, 1, f);
+        fwrite(&tipo, 1, 1, f);
+        fwrite(&m->tau, sizeof(float), 1, f);
+        fwrite(&m->position, sizeof(float), 1, f);
+        fwrite(&m->angle, sizeof(float), 1, f);
+        uint32_t uc = (uint32_t)m->usage_count;
+        fwrite(&uc, sizeof(uc), 1, f);
+        uint8_t ia = (uint8_t)(m->is_active ? 1 : 0);
+        fwrite(&ia, 1, 1, f);
+        fwrite(&m->activation, sizeof(float), 1, f);
+
+        uint8_t nasoc = (uint8_t)m->num_asociaciones;
+        if (nasoc > MAX_ASOC) nasoc = MAX_ASOC;
+        fwrite(&nasoc, 1, 1, f);
+        for (int a = 0; a < nasoc; a++) {
+            int32_t did = (int32_t)m->asociaciones[a].dest_id;
+            int32_t ta = (int32_t)m->asociaciones[a].tipo_asoc;
+            fwrite(&did, sizeof(did), 1, f);
+            fwrite(&ta, sizeof(ta), 1, f);
+            fwrite(&m->asociaciones[a].peso, sizeof(float), 1, f);
+        }
+
+        uint16_t plen = (uint16_t)m->properties.n;
+        fwrite(&plen, sizeof(plen), 1, f);
+        for (int j = 0; j < plen; j++)
+            fwrite(&m->properties.d[j], sizeof(float), 1, f);
+    }
+
+    /* Project info */
+    uint8_t plen = (uint8_t)strlen(sys->current_project);
+    if (plen > 63) plen = 63;
+    fwrite(&plen, 1, 1, f);
+    fwrite(sys->current_project, 1, plen, f);
+
+    plen = (uint8_t)strlen(sys->project_type);
+    if (plen > 63) plen = 63;
+    fwrite(&plen, 1, 1, f);
+    fwrite(sys->project_type, 1, plen, f);
+
+    fclose(f);
+    nlp_save();
+    printf("  -> estado guardado en %s (%u modulos)\n", path, n_save);
+}
+
+int orbital_load_binary(OrbitalSystem *sys, const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) return 0;
+
+    char magic[4];
+    if (fread(magic, 1, 4, f) != 4 || memcmp(magic, MMIA_MAGIC, 4) != 0)
+        { fclose(f); return 0; }
+
+    uint16_t ver;
+    if (fread(&ver, sizeof(ver), 1, f) != 1) { fclose(f); return 0; }
+    if (ver > MMIA_VERSION) { fclose(f); return 0; }
+
+    fread(&sys->t, sizeof(sys->t), 1, f);
+
+    uint16_t n_save = 0;
+    fread(&n_save, sizeof(n_save), 1, f);
+
+    int loaded = 0;
+    for (uint16_t mi = 0; mi < n_save; mi++) {
+        uint8_t nlen;
+        if (fread(&nlen, 1, 1, f) != 1) break;
+        if (nlen > 63) { fseek(f, nlen, SEEK_CUR); continue; }
+
+        char name[64];
+        memset(name, 0, sizeof(name));
+        if (fread(name, 1, nlen, f) != nlen) break;
+        name[nlen] = 0;
+
+        uint8_t src = 0, tipo = 0;
+        float tau = 0.3f, pos = 1.0f, angle = 0, activation = 0;
+        uint32_t uc = 0;
+        uint8_t ia = 0;
+
+        if (fread(&src, 1, 1, f) != 1) break;
+        if (fread(&tipo, 1, 1, f) != 1) break;
+        if (fread(&tau, sizeof(float), 1, f) != 1) break;
+        if (fread(&pos, sizeof(float), 1, f) != 1) break;
+        if (fread(&angle, sizeof(float), 1, f) != 1) break;
+        if (fread(&uc, sizeof(uc), 1, f) != 1) break;
+        if (fread(&ia, 1, 1, f) != 1) break;
+        if (fread(&activation, sizeof(float), 1, f) != 1) break;
+
+        uint8_t nasoc = 0;
+        if (fread(&nasoc, 1, 1, f) != 1) break;
+        int asoc_ids[MAX_ASOC] = {0};
+        int asoc_tipos[MAX_ASOC] = {0};
+        float asoc_pesos[MAX_ASOC] = {0};
+        for (int a = 0; a < nasoc && a < MAX_ASOC; a++) {
+            int32_t did, ta;
+            float p;
+            if (fread(&did, sizeof(did), 1, f) != 1) break;
+            if (fread(&ta, sizeof(ta), 1, f) != 1) break;
+            if (fread(&p, sizeof(float), 1, f) != 1) break;
+            asoc_ids[a] = (int)did;
+            asoc_tipos[a] = (int)ta;
+            asoc_pesos[a] = p;
+        }
+
+        uint16_t plen = 0;
+        if (fread(&plen, sizeof(plen), 1, f) != 1) break;
+        float props[256];
+        for (int j = 0; j < plen && j < 256; j++) {
+            if (fread(&props[j], sizeof(float), 1, f) != 1) break;
+        }
+
+        int dup = 0;
+        for (int j = 4; j < sys->n_modules; j++)
+            if (strcmp(sys->modules[j].name, name) == 0) { dup = 1; break; }
+        if (!dup) {
+            orbital_add_module(sys, name, props, (int)src, tau);
+            int mid = sys->n_modules - 1;
+            sys->modules[mid].tipo = (int)tipo;
+            sys->modules[mid].position = pos;
+            sys->modules[mid].angle = angle;
+            sys->modules[mid].usage_count = (int)uc;
+            sys->modules[mid].is_active = (int)ia;
+            sys->modules[mid].activation = activation;
+            sys->modules[mid].num_asociaciones = nasoc > MAX_ASOC ? MAX_ASOC : (int)nasoc;
+            for (int a = 0; a < sys->modules[mid].num_asociaciones; a++) {
+                sys->modules[mid].asociaciones[a].dest_id = asoc_ids[a];
+                sys->modules[mid].asociaciones[a].tipo_asoc = asoc_tipos[a];
+                sys->modules[mid].asociaciones[a].peso = asoc_pesos[a];
+            }
+            orbital_register_module(sys, mid);
+            loaded++;
+        }
+    }
+
+    /* Restore project info */
+    uint8_t pn_len = 0;
+    if (fread(&pn_len, 1, 1, f) == 1 && pn_len <= 63) {
+        char buf[64] = {0};
+        if (fread(buf, 1, pn_len, f) == pn_len) {
+            buf[pn_len] = 0;
+            strncpy(sys->current_project, buf, MAX_PROJECT_NAME - 1);
+        }
+    }
+    if (fread(&pn_len, 1, 1, f) == 1 && pn_len <= 63) {
+        char buf[64] = {0};
+        if (fread(buf, 1, pn_len, f) == pn_len) {
+            buf[pn_len] = 0;
+            strncpy(sys->project_type, buf, MAX_PROJECT_TYPE - 1);
+        }
+    }
+
+    fclose(f);
+    if (loaded > 0)
+        printf("  -> restaurados %d modulos desde %s\n", loaded, path);
+    return loaded;
 }
 
 void orbital_expand_from_residual(OrbitalSystem *sys, Vec residual) {
@@ -540,6 +792,169 @@ Vec orbital_encode_text(OrbitalSystem *sys, const char *text) {
     }
     vec_normalize(&v);
     return v;
+}
+
+/* Forward declarations */
+void ejecutar_accion(OrbitalSystem *sys, const char *cualidad, const char *objeto);
+
+/* ---- Analisis RAE integrado ---- */
+
+static int find_or_create_module(OrbitalSystem *sys, const char *name, int tipo) {
+    for (int i = 4; i < sys->n_modules; i++)
+        if (strcmp(sys->modules[i].name, name) == 0)
+            return i;
+    Vec sv = orbital_encode_text(sys, name);
+    float *props = (float*)malloc(sys->p * sizeof(float));
+    for (int j = 0; j < sys->p; j++) props[j] = sv.d[j];
+    orbital_add_module(sys, name, props, 0, 0.15f);
+    if (sys->n_modules > 0)
+        sys->modules[sys->n_modules - 1].tipo = tipo;
+    free(props);
+    vec_free(&sv);
+    return sys->n_modules - 1;
+}
+
+void orbital_analyze_rae(OrbitalSystem *sys, FraseAnalizada *fa) {
+    if (!mmia_quiet) {
+        printf("[RAE-MMIA] '%s'\n", fa->raw);
+        printf("  ACTANTE=%s ACCION=%s PACIENTE=%s CONTEXTO=%s INTENCION=%s\n",
+               fa->actante, fa->accion, fa->paciente, fa->contexto, fa->intencion);
+    }
+
+    if (strcmp(fa->intencion, "ejecutar") == 0 && strlen(fa->accion) > 0) {
+        int cual_id = find_or_create_module(sys, fa->accion, TIPO_CUALIDAD);
+        char obj_name[256] = {0};
+        int obj_id = -1;
+
+        if (strlen(fa->paciente) > 0) {
+            strncpy(obj_name, fa->paciente, sizeof(obj_name) - 1);
+            obj_id = find_or_create_module(sys, fa->paciente, TIPO_OBJETO);
+        }
+        if (strlen(fa->contexto) > 0 && strlen(obj_name) > 0) {
+            strncat(obj_name, " ", sizeof(obj_name) - strlen(obj_name) - 1);
+            strncat(obj_name, fa->contexto, sizeof(obj_name) - strlen(obj_name) - 1);
+        } else if (strlen(fa->contexto) > 0) {
+            strncpy(obj_name, fa->contexto, sizeof(obj_name) - 1);
+        }
+
+        char action_name[256];
+        if (strlen(obj_name) > 0)
+            snprintf(action_name, sizeof(action_name), "%s_%s", fa->accion, obj_name);
+        else
+            snprintf(action_name, sizeof(action_name), "%s", fa->accion);
+        for (char *c = action_name; *c; c++)
+            if (!isalnum(*c) && *c != '_') *c = '_';
+
+        int action_id = -1;
+        for (int i = 0; i < sys->n_modules; i++) {
+            if (sys->modules[i].tipo == TIPO_ACCION &&
+                strcmp(sys->modules[i].name, action_name) == 0) {
+                action_id = i; break;
+            }
+        }
+        if (action_id < 0) {
+            Vec qv = orbital_encode_text(sys, fa->accion);
+            float *props = (float*)malloc(sys->p * sizeof(float));
+            for (int i = 0; i < sys->p; i++) props[i] = qv.d[i];
+            orbital_add_module(sys, action_name, props, 1, 0.20f);
+            sys->modules[sys->n_modules - 1].tipo = TIPO_ACCION;
+            int mid = sys->n_modules - 1;
+            sys->modules[mid].asociaciones[0].dest_id = cual_id;
+            sys->modules[mid].asociaciones[0].tipo_asoc = 0;
+            sys->modules[mid].asociaciones[0].peso = 1.0f;
+            if (obj_id >= 0) {
+                sys->modules[mid].asociaciones[1].dest_id = obj_id;
+                sys->modules[mid].asociaciones[1].tipo_asoc = 1;
+                sys->modules[mid].asociaciones[1].peso = 1.0f;
+                sys->modules[mid].num_asociaciones = 2;
+            } else {
+                sys->modules[mid].num_asociaciones = 1;
+            }
+            if (!mmia_quiet)
+                printf("[RAE-MMIA] nueva accion aprendida: '%s'\n", action_name);
+            free(props);
+            vec_free(&qv);
+        } else {
+            sys->modules[action_id].usage_count++;
+            if (!mmia_quiet)
+                printf("[RAE-MMIA] accion reconocida: '%s' (%d usos)\n",
+                       action_name, sys->modules[action_id].usage_count);
+        }
+        ejecutar_accion(sys, fa->accion, obj_name);
+    } else if (strcmp(fa->intencion, "responder") == 0) {
+        /* Preguntas con interrogativos */
+        if (strcmp(fa->pregunta, "que") == 0) {
+            if (strlen(fa->paciente) > 0) {
+                /* "que es X" */
+                ConceptEdge sets[16];
+                int n = get_related_concepts(fa->paciente_id, sets, 16);
+                const char *tipo = "concepto";
+                for (int j = 0; j < n; j++) {
+                    if (sets[j].rel_type == REL_PERTENECE) {
+                        if (sets[j].to_concept == SET_ANIMAL) { tipo = "animal"; break; }
+                        if (sets[j].to_concept == SET_PERSONAJE) { tipo = "personaje"; break; }
+                        if (sets[j].to_concept == SET_COMIDA) { tipo = "comida"; break; }
+                        if (sets[j].to_concept == SET_LUGAR) { tipo = "lugar"; break; }
+                        if (sets[j].to_concept == SET_OBJETO) { tipo = "objeto"; break; }
+                        if (sets[j].to_concept == SET_HERRAMIENTA) { tipo = "herramienta"; break; }
+                        if (sets[j].to_concept == SET_EMOCION) { tipo = "emocion"; break; }
+                        if (sets[j].to_concept == SET_CUALIDAD) { tipo = "cualidad"; break; }
+                        if (sets[j].to_concept == SET_FAMILIA) { tipo = "familiar"; break; }
+                    }
+                }
+                printf("[MMIA] %s es un %s.\n", fa->paciente, tipo);
+            } else if (strlen(fa->accion) > 0 && (strstr(fa->accion, "hac") || strstr(fa->raw, "hac"))) {
+                printf("[MMIA] Puedo pintar, editar archivos, crear proyectos y mucho mas.\n");
+            } else {
+                printf("[MMIA] No estoy seguro, pero sigo aprendiendo.\n");
+            }
+        } else if (strcmp(fa->pregunta, "quien") == 0) {
+            printf("[MMIA] Soy BDGB, un sistema de inteligencia artificial basado en dinamica orbital. Estoy aqui para ayudarte.\n");
+        } else if (strcmp(fa->pregunta, "donde") == 0) {
+            printf("[MMIA] Estoy ejecutandome en tu ordenador con Windows.\n");
+        } else if (strcmp(fa->pregunta, "cuando") == 0) {
+            printf("[MMIA] Ahora mismo estamos conversando.\n");
+        } else if (strcmp(fa->pregunta, "como") == 0) {
+            if (strstr(fa->raw, "llamas") || strstr(fa->raw, "nombre"))
+                printf("[MMIA] Me llamo BDGB. Soy un sistema basado en dinamica orbital.\n");
+            else if (strstr(fa->raw, "estas") || strstr(fa->raw, "esta"))
+                printf("[MMIA] Estoy bien, aprendiendo nuevas palabras y explorando conceptos.\n");
+            else
+                printf("[MMIA] No estoy seguro a que te refieres.\n");
+        } else if (strcmp(fa->pregunta, "cual") == 0) {
+            printf("[MMIA] No estoy seguro de cual. Puedes darme mas contexto.\n");
+        } else {
+            /* Respuestas conversacionales no interrogativas */
+            const char *saludos[] = {"hola", "buenos", "buenas", "saludos", "hey", "oye", NULL};
+            const char *estado[] = {"como", "como estas", "como esta", "que tal", "como va", NULL};
+            int es_saludo = 0, es_estado = 0;
+            char low[256];
+            for (int i = 0; fa->raw[i]; i++) low[i] = (char)tolower(fa->raw[i]);
+            low[strlen(fa->raw)] = 0;
+            for (int s = 0; saludos[s]; s++)
+                if (strstr(low, saludos[s]) == low) { es_saludo = 1; break; }
+            for (int e = 0; estado[e]; e++)
+                if (strstr(low, estado[e])) { es_estado = 1; break; }
+
+            if (es_saludo) {
+                printf("[MMIA] ¡Hola! ¿En qué puedo ayudarte?\n");
+            } else if (es_estado) {
+                printf("[MMIA] Estoy bien, aprendiendo nuevas palabras y explorando conceptos.\n");
+            } else if (strlen(fa->accion) > 0) {
+                printf("[MMIA] Entendido");
+                if (strlen(fa->paciente) > 0) printf(" sobre %s", fa->paciente);
+                printf(".\n");
+            } else if (strstr(low, "gracias") || strstr(low, "thank")) {
+                printf("[MMIA] ¡De nada! Siempre aprendiendo.\n");
+            } else {
+                printf("[MMIA] Entendido.\n");
+            }
+        }
+    } else if (strcmp(fa->intencion, "consultar") == 0) {
+        printf("[MMIA] No entiendo del todo, pero estoy aprendiendo.\n");
+    } else {
+        printf("[MMIA] No se que hacer con eso.\n");
+    }
 }
 
 void orbital_process(OrbitalSystem *sys, const char *text) {
@@ -568,14 +983,16 @@ void orbital_process(OrbitalSystem *sys, const char *text) {
 
         if (best_idx >= 0 && max_rho > sys->modules[best_idx].tau) {
             sys->L_factor = 0.9f;
-            printf("[MMIA] LI=%.4f > THETA  resuena con '%s' (rho=%.3f)"
-                   "  -> CONTRACCION (L=%.2f)\n",
-                   LI, sys->modules[best_idx].name, max_rho, sys->L_factor);
+            if (!mmia_quiet)
+                printf("[MMIA] LI=%.4f > THETA  resuena con '%s' (rho=%.3f)"
+                       "  -> CONTRACCION (L=%.2f)\n",
+                       LI, sys->modules[best_idx].name, max_rho, sys->L_factor);
         } else {
             sys->L_factor = 2.3947f;
             orbital_expand_from_residual(sys, residual);
-            printf("[MMIA] LI=%.4f > THETA  nuevo modulo  -> EXPANSION (L=%.2f)\n",
-                   LI, sys->L_factor);
+            if (!mmia_quiet)
+                printf("[MMIA] LI=%.4f > THETA  nuevo modulo  -> EXPANSION (L=%.2f)\n",
+                       LI, sys->L_factor);
         }
         vec_free(&ctx);
     } else {
@@ -583,8 +1000,9 @@ void orbital_process(OrbitalSystem *sys, const char *text) {
         Vec xp = subc_project(&sys->sc, x);
         vec_copy(&x, xp);
         vec_free(&xp);
-        printf("[MMIA] LI=%.4f <= THETA  -> CONTRACCION (L=%.2f)\n",
-               LI, sys->L_factor);
+        if (!mmia_quiet)
+            printf("[MMIA] LI=%.4f <= THETA  -> CONTRACCION (L=%.2f)\n",
+                   LI, sys->L_factor);
     }
 
     /* 3. Contraccion/expansion de Banach */
@@ -609,10 +1027,16 @@ void orbital_process(OrbitalSystem *sys, const char *text) {
     else
         sys->P_position = sys->P_position < 0.2f ? sys->P_position + 0.02f : 0.2f;
 
-    /* 5. Guardar contexto y analizar tokens */
+    /* 5. Guardar contexto y analizar con RAE */
     if (strlen(text) > 0 && text[0] != '!') {
         orbital_push_context(sys, text);
-        orbital_analyze_tokens(sys, text);
+        FraseAnalizada fa;
+        int rae_ok = (rae_analizar(text, &fa) == 0);
+        if (rae_ok && (fa.accion_id || strcmp(fa.intencion, "responder") == 0)) {
+            orbital_analyze_rae(sys, &fa);
+        } else {
+            orbital_analyze_tokens(sys, text);
+        }
     }
 
     vec_free(&x);
@@ -1057,171 +1481,21 @@ void orbital_load_tools(OrbitalSystem *sys, const char *path) {
 }
 
 /* ================================================================
- * PERSISTENCIA (JSON minimo)
+ * PERSISTENCIA (binaria, en data/ de BDGB)
  * ================================================================ */
 
 void orbital_save(OrbitalSystem *sys, const char *path) {
-    FILE *f = fopen(path, "w");
-    if (!f) { fprintf(stderr, "error: no se pudo escribir %s\n", path); return; }
-
-    fprintf(f, "{\n");
-    fprintf(f, "  \"version\": \"2.0_c\",\n");
-    fprintf(f, "  \"t\": %d,\n", sys->t);
-    fprintf(f, "  \"p\": %d,\n", sys->p);
-    fprintf(f, "  \"n_modules\": %d,\n", sys->n_modules);
-    if (strlen(sys->current_project) > 0)
-        fprintf(f, "  \"current_project\": \"%s\",\n", sys->current_project);
-    if (strlen(sys->project_type) > 0)
-        fprintf(f, "  \"project_type\": \"%s\",\n", sys->project_type);
-    fprintf(f, "  \"modules\": [\n");
-    for (int i = 4; i < sys->n_modules; i++) {
-        OrbitalModule *m = &sys->modules[i];
-        if (m->source == 0 && m->tipo != TIPO_ACCION) continue;
-        fprintf(f, "    {\"name\":\"%s\",\"source\":%d,\"tipo\":%d,\"tau\":%.4f,\"position\":%.4f,\"angle\":%.4f,\"usage\":%d,",
-                m->name, m->source, m->tipo, m->tau, m->position, m->angle, m->usage_count);
-        fprintf(f, "\"asoc\":[");
-        for (int a = 0; a < m->num_asociaciones && a < MAX_ASOC; a++) {
-            if (a > 0) fprintf(f, ",");
-            fprintf(f, "{%d,%d,%.2f}", m->asociaciones[a].dest_id, m->asociaciones[a].tipo_asoc, m->asociaciones[a].peso);
-        }
-        fprintf(f, "],");
-        fprintf(f, "\"properties\":[");
-        for (int j = 0; j < m->properties.n && j < sys->p; j++) {
-            if (j > 0) fprintf(f, ",");
-            fprintf(f, "%.6f", m->properties.d[j]);
-        }
-        fprintf(f, "]},\n");
-    }
-    fprintf(f, "}\n");
-    fclose(f);
-    printf("  -> estado guardado en %s\n", path);
+    (void)path;
+    char p[512];
+    mmia_data_path(p, sizeof(p));
+    orbital_save_binary(sys, p);
 }
 
 int orbital_load(OrbitalSystem *sys, const char *path) {
-    FILE *f = fopen(path, "r");
-    if (!f) return 0;
-
-    /* parsing minimal: buscar "properties":[ ... ] y extraer learned modules */
-    char buf[65536];
-    size_t n = fread(buf, 1, sizeof(buf)-1, f);
-    buf[n] = 0;
-    fclose(f);
-
-    /* contar cuantos learned modules hay en el JSON */
-    int count = 0;
-    char *p = buf;
-    while ((p = strstr(p, "\"source\":1")) != NULL) { count++; p++; }
-
-    if (count == 0) return 1;
-
-    /* restaurar learned modules */
-    p = buf;
-    for (int i = 0; i < count; i++) {
-        /* buscar bloque de modulo */
-        p = strstr(p, "\"name\":\"");
-        if (!p) break;
-        p += 8;
-        char name[MAX_NAME]; int ni = 0;
-        while (*p && *p != '\"' && ni < MAX_NAME-1) name[ni++] = *p++;
-        name[ni] = 0;
-
-        float tau = 0.3f, pos = 1.0f, angle = 0;
-        int usage = 0, tipo = TIPO_CONOCIMIENTO;
-        /* extraer campos */
-        char *t = strstr(p, "\"tipo\":");
-        if (t) sscanf(t+7, "%d", &tipo);
-        t = strstr(p, "\"tau\":");
-        if (t) sscanf(t+6, "%f", &tau);
-        t = strstr(p, "\"position\":");
-        if (t) sscanf(t+11, "%f", &pos);
-        t = strstr(p, "\"angle\":");
-        if (t) sscanf(t+7, "%f", &angle);
-        t = strstr(p, "\"usage\":");
-        if (t) sscanf(t+7, "%d", &usage);
-
-        /* extraer asociaciones */
-        t = strstr(p, "\"asoc\":[");
-        int asoc_ids[MAX_ASOC] = {0};
-        int asoc_tipos[MAX_ASOC] = {0};
-        float asoc_pesos[MAX_ASOC] = {0};
-        int nasoc = 0;
-        if (t) {
-            t += 8;
-            while (*t && *t != ']' && nasoc < MAX_ASOC) {
-                while (*t && *t != '{') t++;
-                if (*t != '{') break;
-                t++;
-                asoc_ids[nasoc] = atoi(t);
-                while (*t && *t != ',') t++;
-                if (*t == ',') t++;
-                asoc_tipos[nasoc] = atoi(t);
-                while (*t && *t != ',') t++;
-                if (*t == ',') t++;
-                asoc_pesos[nasoc] = (float)atof(t);
-                while (*t && *t != '}') t++;
-                nasoc++;
-            }
-        }
-
-        /* extraer properties */
-        t = strstr(p, "\"properties\":[");
-        if (!t) { p++; continue; }
-        t += 14;
-        float props[256];
-        int np = 0;
-        while (*t && *t != ']' && np < 256) {
-            while (*t && (*t == ' ' || *t == '\n' || *t == '\r')) t++;
-            if (*t == ']') break;
-            props[np++] = (float)atof(t);
-            while (*t && *t != ',' && *t != ']') t++;
-            if (*t == ',') t++;
-        }
-
-        /* anadir modulo */
-        if (np > 0) {
-            int dup = 0;
-            for (int j = 4; j < sys->n_modules; j++)
-                if (strcmp(sys->modules[j].name, name) == 0) { dup = 1; break; }
-            if (!dup) {
-                int source = (tipo == TIPO_OBJETO || tipo == TIPO_CUALIDAD) ? 0 : 1;
-                orbital_add_module(sys, name, props, source, tau);
-                int mid = sys->n_modules - 1;
-                sys->modules[mid].tipo = tipo;
-                sys->modules[mid].position = pos;
-                sys->modules[mid].angle = angle;
-                sys->modules[mid].usage_count = usage;
-                sys->modules[mid].num_asociaciones = nasoc;
-                for (int a = 0; a < nasoc; a++) {
-                    sys->modules[mid].asociaciones[a].dest_id = asoc_ids[a];
-                    sys->modules[mid].asociaciones[a].tipo_asoc = asoc_tipos[a];
-                    sys->modules[mid].asociaciones[a].peso = asoc_pesos[a];
-                }
-            }
-        }
-        p = t;
-    }
-    printf("  -> restaurados %d modulos aprendidos\n", count);
-
-    /* restaurar contexto de proyecto */
-    p = strstr(buf, "\"current_project\": \"");
-    if (p) {
-        p += 20;
-        int ni = 0;
-        while (*p && *p != '\"' && ni < MAX_PROJECT_NAME-1)
-            sys->current_project[ni++] = *p++;
-        sys->current_project[ni] = 0;
-        p = strstr(p, "\"project_type\": \"");
-        if (p) {
-            p += 17;
-            ni = 0;
-            while (*p && *p != '\"' && ni < MAX_PROJECT_TYPE-1)
-                sys->project_type[ni++] = *p++;
-            sys->project_type[ni] = 0;
-        }
-        printf("  -> proyecto restaurado: %s (%s)\n",
-               sys->current_project, sys->project_type);
-    }
-    return 1;
+    (void)path;
+    char p[512];
+    mmia_data_path(p, sizeof(p));
+    return orbital_load_binary(sys, p);
 }
 
 /* ================================================================
@@ -1365,8 +1639,6 @@ void orbital_list_directory(const char *path) {
 
 int mmia_run_interactive(void) {
     srand((unsigned int)time(NULL));
-    const char *save_path = "mmia_memory.json";
-
     printf("\n=======================================================\n");
     printf("  MMIA 2.0 — Subconsciente Numerico + Orbital\n");
     printf("  Version C  |  dim=%d  theta=%.2f\n", DIM, THETA);
@@ -1374,7 +1646,8 @@ int mmia_run_interactive(void) {
 
     OrbitalSystem sys;
     orbital_init(&sys, DIM, THETA, DT);
-    orbital_load(&sys, save_path);
+    orbital_load(&sys, NULL);
+    mmia_set_quiet(1);
 
     printf("Escribe una tarea, o 'salir' para terminar.\n");
     printf("Comandos: !cmd <comando>  !save  !load  !status\n");
@@ -1414,11 +1687,11 @@ int mmia_run_interactive(void) {
             continue;
         }
         if (strcmp(cmd, "!save") == 0) {
-            orbital_save(&sys, save_path);
+            orbital_save(&sys, NULL);
             continue;
         }
         if (strcmp(cmd, "!load") == 0) {
-            orbital_load(&sys, save_path);
+            orbital_load(&sys, NULL);
             continue;
         }
         if (strcmp(cmd, "!status") == 0) {
@@ -1470,15 +1743,17 @@ int mmia_run_interactive(void) {
             continue;
         }
 
+        int n_aprendidas = rae_aprender_de_texto(cmd);
+        if (!mmia_quiet && n_aprendidas > 0)
+            printf("[RAE] aprendidas %d palabras nuevas\n", n_aprendidas);
         orbital_process(&sys, cmd);
-        if (s == n_segments - 1) orbital_visualize(&sys);
-        else printf("  -> segmento %d/%d completado\n", s + 1, n_segments);
+        if (s < n_segments - 1) printf("  -> segmento %d/%d completado\n", s + 1, n_segments);
     }
     if (should_exit) break;
     }
 
     printf("\nGuardando estado...\n");
-    orbital_save(&sys, save_path);
+    orbital_save(&sys, NULL);
     orbital_free(&sys);
     printf("Hecho.\n");
     return 0;
@@ -1486,16 +1761,17 @@ int mmia_run_interactive(void) {
 
 int mmia_process_direct(const char *input_text) {
     srand((unsigned int)time(NULL));
-    const char *save_path = "mmia_memory.json";
-
     OrbitalSystem sys;
     orbital_init(&sys, DIM, THETA, DT);
-    orbital_load(&sys, save_path);
+    orbital_load(&sys, NULL);
 
     printf("TAREA: %s\n\n", input_text);
+    int n_aprendidas = rae_aprender_de_texto(input_text);
+    if (n_aprendidas > 0)
+        printf("[RAE] aprendidas %d palabras nuevas\n", n_aprendidas);
     orbital_process(&sys, input_text);
     orbital_visualize(&sys);
-    orbital_save(&sys, save_path);
+    orbital_save(&sys, NULL);
     orbital_free(&sys);
     return 0;
 }

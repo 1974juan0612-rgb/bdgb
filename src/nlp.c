@@ -50,6 +50,52 @@ static int predicate_index(int (*pred)(const bdgb_props_t *)) {
 static int nlp_stem(const char *word, char *out, int outsz);
 static int is_stopword(const char *word);
 
+/* Mapa de raices irregulares → infinitivos */
+static const char *irregular_stems[][2] = {
+    {"tien", "tener"},   {"teng", "tener"},
+    {"quier", "querer"}, {"quis", "querer"},
+    {"pued", "poder"},   {"podr", "poder"},  {"pud", "poder"},
+    {"hac", "hacer"},    {"hag", "hacer"},   {"hic", "hacer"},
+    {"dic", "decir"},    {"dig", "decir"},   {"dir", "decir"},
+    {"veng", "venir"},   {"vin", "venir"},   {"vendr", "venir"},
+    {"pong", "poner"},   {"pondr", "poner"},
+    {"salg", "salir"},   {"saldr", "salir"},
+    {"est", "estar"},
+    {"vay", "ir"},       {"vam", "ir"},      {"fu", "ir"},
+    {"sab", "saber"},    {"se", "saber"},     {"sup", "saber"},
+    {"pens", "pensar"},  {"piens", "pensar"},
+    {"encuentr", "encontrar"},
+    {"duerm", "dormir"}, {"durm", "dormir"},
+    {"muer", "morir"},   {"mur", "morir"},
+    {"jueg", "jugar"},
+    {"vuelv", "volver"},
+    {"devuelv", "devolver"},
+    {"resuelv", "resolver"},
+    {"muev", "mover"},
+    {"cuest", "costar"},
+    {"sient", "sentir"}, {"sint", "sentir"},
+    {"mient", "mentir"}, {"mint", "mentir"},
+    {"prefier", "preferir"}, {"prefir", "preferir"},
+    {"sirv", "servir"},
+    {"pid", "pedir"},
+    {"repet", "repetir"}, {"repit", "repetir"},
+    {"conoc", "conocer"},
+    {"parezc", "parecer"}, {"parec", "parecer"},
+    {"crezc", "crecer"},
+    {"nazc", "nacer"},
+    {"traduc", "traducir"}, {"traduj", "traducir"},
+    {"conduzc", "conducir"}, {"conduj", "conducir"},
+    {"produzc", "producir"}, {"produj", "producir"},
+    {"oig", "oir"},
+    {"cai", "caer"},
+    {"soy", "ser"},      {"se", "ser"},      {"es", "ser"},
+    {"som", "ser"},      {"son", "ser"},
+    {"eres", "ser"},
+    {"estoy", "estar"},  {"esta", "estar"},  {"estas", "estar"},
+    {"estam", "estar"},  {"estan", "estar"}, {"este", "estar"},
+    {NULL, NULL}
+};
+
 static int auto_predicate_idx(const char *word) {
     if (strstr(word, "simetr")) return PRED_SIMETRICO;
     if (strstr(word, "dens"))   return PRED_DENSO;
@@ -71,9 +117,40 @@ static NLPTerm *lookup_term(const char *word) {
         if (strcmp(dictionary[i].word, word) == 0) return &dictionary[i];
     }
     char stemmed[32];
-    if (nlp_stem(word, stemmed, sizeof(stemmed))) {
+    int stem_result = nlp_stem(word, stemmed, sizeof(stemmed));
+
+    /* probar raices irregulares contra palabra original */
+    for (int ir = 0; irregular_stems[ir][0]; ir++) {
+        if (strcmp(irregular_stems[ir][0], word) == 0) {
+            const char *infinitivo = irregular_stems[ir][1];
+            for (int i = 0; i < dict_count; i++) {
+                if (strcmp(dictionary[i].word, infinitivo) == 0) return &dictionary[i];
+            }
+        }
+    }
+
+    if (stem_result) {
         for (int i = 0; i < dict_count; i++) {
             if (strcmp(dictionary[i].word, stemmed) == 0) return &dictionary[i];
+        }
+        /* intentar con terminaciones de infinitivo: -ar, -er, -ir */
+        char inf[32];
+        int slen = (int)strlen(stemmed);
+        const char *ends[] = {"ar", "er", "ir", NULL};
+        for (int e = 0; ends[e]; e++) {
+            snprintf(inf, sizeof(inf), "%s%s", stemmed, ends[e]);
+            for (int i = 0; i < dict_count; i++) {
+                if (strcmp(dictionary[i].word, inf) == 0) return &dictionary[i];
+            }
+        }
+        /* probar raices irregulares contra stem */
+        for (int ir = 0; irregular_stems[ir][0]; ir++) {
+            if (strcmp(irregular_stems[ir][0], stemmed) == 0) {
+                const char *infinitivo = irregular_stems[ir][1];
+                for (int i = 0; i < dict_count; i++) {
+                    if (strcmp(dictionary[i].word, infinitivo) == 0) return &dictionary[i];
+                }
+            }
         }
     }
     return NULL;
@@ -83,13 +160,87 @@ void nlp_add_term(const char *word, uint16_t concept_id,
                   int (*pred)(const bdgb_props_t *),
                   int dyn_filter, int geom_filter) {
     if (dict_count >= MAX_TERMS) return;
-    if (lookup_term(word)) return;
+    for (int i = 0; i < dict_count; i++)
+        if (strcmp(dictionary[i].word, word) == 0 &&
+            dictionary[i].concept_id == concept_id) return;
     NLPTerm *t = &dictionary[dict_count++];
     strncpy(t->word, word, sizeof(t->word) - 1);
     t->concept_id = concept_id;
     t->predicate = pred;
     t->dynamic_filter = dyn_filter;
     t->geom_type_filter = geom_filter;
+}
+
+int nlp_lookup_all(const char *word, uint16_t *out_ids, int max_out) {
+    if (!out_ids || max_out <= 0) return 0;
+    char stemmed[32];
+    int has_stem = nlp_stem(word, stemmed, sizeof(stemmed));
+    int count = 0;
+
+    /* siempre buscar coincidencia exacta */
+    for (int i = 0; i < dict_count && count < max_out; i++) {
+        if (strcmp(dictionary[i].word, word) == 0)
+            out_ids[count++] = dictionary[i].concept_id;
+    }
+    /* siempre probar mapa irregular contra la palabra original */
+    if (count < max_out) {
+        for (int ir = 0; irregular_stems[ir][0] && count < max_out; ir++) {
+            if (strcmp(irregular_stems[ir][0], word) == 0) {
+                const char *infinitivo = irregular_stems[ir][1];
+                for (int i = 0; i < dict_count && count < max_out; i++) {
+                    if (strcmp(dictionary[i].word, infinitivo) == 0) {
+                        int dup = 0;
+                        for (int j = 0; j < count; j++)
+                            if (out_ids[j] == dictionary[i].concept_id) { dup = 1; break; }
+                        if (!dup) out_ids[count++] = dictionary[i].concept_id;
+                    }
+                }
+            }
+        }
+    }
+    if (has_stem && count < max_out) {
+        for (int i = 0; i < dict_count && count < max_out; i++) {
+            if (strcmp(dictionary[i].word, stemmed) == 0) {
+                /* evitar duplicados */
+                int dup = 0;
+                for (int j = 0; j < count; j++)
+                    if (out_ids[j] == dictionary[i].concept_id) { dup = 1; break; }
+                if (!dup) out_ids[count++] = dictionary[i].concept_id;
+            }
+        }
+        /* probar con terminaciones de infinitivo: -ar, -er, -ir */
+        const char *ends[] = {"ar", "er", "ir", NULL};
+        char inf[32];
+        int slen = (int)strlen(stemmed);
+        for (int e = 0; ends[e] && count < max_out; e++) {
+            snprintf(inf, sizeof(inf), "%s%s", stemmed, ends[e]);
+            for (int i = 0; i < dict_count && count < max_out; i++) {
+                if (strcmp(dictionary[i].word, inf) == 0) {
+                    int dup = 0;
+                    for (int j = 0; j < count; j++)
+                        if (out_ids[j] == dictionary[i].concept_id) { dup = 1; break; }
+                    if (!dup) out_ids[count++] = dictionary[i].concept_id;
+                }
+            }
+        }
+        /* probar con raices irregulares */
+        if (count < max_out) {
+            for (int ir = 0; irregular_stems[ir][0]; ir++) {
+                if (strcmp(irregular_stems[ir][0], stemmed) == 0) {
+                    const char *infinitivo = irregular_stems[ir][1];
+                    for (int i = 0; i < dict_count && count < max_out; i++) {
+                        if (strcmp(dictionary[i].word, infinitivo) == 0) {
+                            int dup = 0;
+                            for (int j = 0; j < count; j++)
+                                if (out_ids[j] == dictionary[i].concept_id) { dup = 1; break; }
+                            if (!dup) out_ids[count++] = dictionary[i].concept_id;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return count;
 }
 
 /* ----- Persistence ----- */
@@ -143,7 +294,6 @@ int nlp_load(void) {
         if (fread(&pidx, 1, 1, f) != 1) break;
         if (fread(&dyn, sizeof(dyn), 1, f) != 1) break;
         if (fread(&geom, sizeof(geom), 1, f) != 1) break;
-        if (lookup_term(word)) continue;
         if (dict_count >= MAX_TERMS) break;
         NLPTerm *t = &dictionary[dict_count++];
         strncpy(t->word, word, sizeof(t->word) - 1);
@@ -244,7 +394,7 @@ static int is_stopword(const char *word) {
     return 0;
 }
 
-/* ----- Simple Spanish stemmer ----- */
+/* ----- Spanish stemmer mejorado ----- */
 
 static int nlp_stem(const char *word, char *out, int outsz) {
     int len = (int)strlen(word);
@@ -257,22 +407,82 @@ static int nlp_stem(const char *word, char *out, int outsz) {
     len = (int)strlen(lower);
 
     int stemmed = 0;
+
+    /* Sufijos largos (prioridad alta) */
     if (len > 6 && strcmp(&lower[len - 6], "mente") == 0)  { len -= 6; stemmed = 1; }
+    if (len > 7 && strcmp(&lower[len - 7], "amiento") == 0) { len -= 7; stemmed = 1; }
+    if (len > 7 && strcmp(&lower[len - 7], "imiento") == 0) { len -= 7; stemmed = 1; }
+
+    /* -ción, -sión */
     if (len > 5 && strcmp(&lower[len - 5], "ción") == 0)   { len -= 5; stemmed = 1; }
     if (len > 5 && strcmp(&lower[len - 5], "sión") == 0)   { len -= 5; stemmed = 1; }
+
+    /* -dad, -tad */
     if (len > 4 && strcmp(&lower[len - 4], "dad") == 0)    { len -= 4; stemmed = 1; }
     if (len > 4 && strcmp(&lower[len - 4], "tad") == 0)    { len -= 4; stemmed = 1; }
-    if (!stemmed && len > 4 && strcmp(&lower[len - 4], "ando") == 0) { len -= 4; stemmed = 1; }
-    if (len > 4 && strcmp(&lower[len - 4], "iendo") == 0)  { len -= 5; stemmed = 1; }
 
-    if (len > 3 && (strcmp(&lower[len - 3], "aba") == 0 ||
-                    strcmp(&lower[len - 3], "ido") == 0))  { len -= 3; stemmed = 1; }
+    /* Gerundios */
+    if (len > 4 && strcmp(&lower[len - 4], "ando") == 0)   { len -= 4; stemmed = 1; }
+    if (len > 5 && strcmp(&lower[len - 5], "iendo") == 0)  { len -= 5; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "yendo") == 0)  { len -= 4; stemmed = 1; }
 
-    if (len > 2) {
+    /* Participios */
+    if (len > 4 && strcmp(&lower[len - 4], "ado") == 0)    { len -= 4; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "ido") == 0)    { len -= 4; stemmed = 1; }
+
+    /* Imperfecto -aba, -ia */
+    if (len > 4 && strcmp(&lower[len - 4], "aba") == 0)    { len -= 4; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "ian") == 0)    { len -= 4; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "ia") == 0)     { len -= 3; stemmed = 1; }
+
+    /* Infinitivos */
+    if (len > 2 && (strcmp(&lower[len - 2], "ar") == 0 ||
+                    strcmp(&lower[len - 2], "er") == 0 ||
+                    strcmp(&lower[len - 2], "ir") == 0))   { len -= 2; stemmed = 1; }
+
+    /* Presente: quitar terminaciones verbales comunes */
+    /* -o (yo hablo), -as (tu hablas), -a (el habla), -an (ellos hablan) */
+    /* -es (tu comes), -e (el come), -en (ellos comen) */
+    if (len > 4 && strcmp(&lower[len - 4], "aban") == 0)   { len -= 4; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "asen") == 0)   { len -= 4; stemmed = 1; }
+    if (len > 4 && strcmp(&lower[len - 4], "eron") == 0)   { len -= 4; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "aba") == 0)    { len -= 3; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "ara") == 0)    { len -= 3; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "ase") == 0)    { len -= 3; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "era") == 0)    { len -= 3; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "ese") == 0)    { len -= 3; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "ian") == 0)    { len -= 3; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "ias") == 0)    { len -= 3; stemmed = 1; }
+    if (len > 3 && strcmp(&lower[len - 3], "ado") == 0)    { len -= 3; stemmed = 1; }
+
+    /* Sufijos de conjugacion multi-caracter */
+    if (len > 4 && strcmp(&lower[len - 4], "imos") == 0) { len -= 4; stemmed = 1; } /* -imos (nosotros -ir) */
+    if (len > 4 && strcmp(&lower[len - 4], "emos") == 0) { len -= 4; stemmed = 1; } /* -emos (nosotros -er) */
+    if (len > 4 && strcmp(&lower[len - 4], "amos") == 0) { len -= 4; stemmed = 1; } /* -amos (nosotros -ar) */
+    if (len > 4 && strcmp(&lower[len - 3], "mos") == 0)  { len -= 3; stemmed = 1; } /* -mos generico */
+    if (len > 4 && strcmp(&lower[len - 3], "ais") == 0)  { len -= 3; stemmed = 1; } /* -ais (vosotros -ar) */
+    if (len > 4 && strcmp(&lower[len - 3], "eis") == 0)  { len -= 3; stemmed = 1; } /* -eis (vosotros -er) */
+    if (len > 4 && strcmp(&lower[len - 3], "is") == 0)   { len -= 2; stemmed = 1; } /* -is (vosotros -ir) */
+
+    /* Quitar terminaciones de conjugacion (max 2 pasadas) */
+    for (int pass = 0; pass < 2 && len > 3; pass++) {
+        /* vocal final 'o', 'a', 's', 'e', 'i' */
         if (lower[len - 1] == 'o' || lower[len - 1] == 'a' ||
-            lower[len - 1] == 's') {
-            if (!(len > 3 && lower[len - 2] == 'u' && lower[len - 3] == 'q'))
-                { len--; }
+            lower[len - 1] == 's' || lower[len - 1] == 'e' ||
+            lower[len - 1] == 'i') {
+            if (!(len > 4 && lower[len - 2] == 'u' && lower[len - 3] == 'q'))
+                { len--; stemmed = 1; continue; }
+        }
+        /* 'n' final tras vocal (ellos/as) */
+        if (len > 4 && lower[len - 1] == 'n' &&
+            (lower[len - 2] == 'a' || lower[len - 2] == 'e' ||
+             lower[len - 2] == 'i' || lower[len - 2] == 'o')) {
+            len--; stemmed = 1; continue;
+        }
+        /* 'y' final */
+        if (len > 4 && lower[len - 1] == 'y' &&
+            (lower[len - 2] == 'e' || lower[len - 2] == 'a')) {
+            len--; stemmed = 1; continue;
         }
     }
 

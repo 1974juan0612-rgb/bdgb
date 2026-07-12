@@ -1,0 +1,18 @@
+{
+    "id": "notebook-vision",
+    "nombre": "Vision de Pantalla",
+    "descripcion": "Escanea la pantalla con PyAutoGUI, encuentra botones por color y guarda coordenadas en pipeline_state/vista.json",
+    "glifo_principal": true,
+    "inputs": [],
+    "outputs": ["pipeline_state/vista.json"],
+    "tiempo": {
+        "modalidad": "automatico",
+        "inicio": "NotebookLM abierto",
+        "fin": "Coordenadas guardadas"
+    },
+    "bibliotecario": {
+        "recursos": [],
+        "credenciales": [],
+        "permisos": []
+    }
+}

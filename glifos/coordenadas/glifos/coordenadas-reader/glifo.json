@@ -1,0 +1,24 @@
+{
+    "id": "coordenadas-reader",
+    "nombre": "Lector de Coordenadas",
+    "tipo": "externo",
+    "glifo_principal": true,
+    "entry": "python glifos/coordenadas/glifos/coordenadas-reader/reader.py",
+    "descripcion": "Overlay transparente click-through. Click registra coordenada + tiempo, guarda en pipeline_state/coordenadas.json",
+    "inputs": [],
+    "outputs": ["pipeline_state/coordenadas.json"],
+    "actualizable": true,
+    "lenguaje": "python3",
+    "tiempo": {
+        "modalidad": "dirigido",
+        "inicio": {"trigger": "manual", "via": "python reader.py"},
+        "fin": {"tipo": "senal", "descripcion": "Presiona 'q' para guardar y salir"}
+    },
+    "bibliotecario": {
+        "recursos": [],
+        "credenciales": [],
+        "permisos": ["red", "input"]
+    },
+    "panal": "coordenadas",
+    "version": "1.0"
+}

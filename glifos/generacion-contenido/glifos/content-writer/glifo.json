@@ -3,7 +3,7 @@
   "nombre": "Redactor de Articulos IA",
   "tipo": "externo",
   "glifo_principal": true,
-  "descripcion": "Abre ChatGPT en navegador via CDP, escribe prompt natural, espera respuesta y la extrae. La IA no sabe que es un glifo.",
+  "descripcion": "Abre ChatGPT en navegador via PyAutoGUI, copia prompt al portapapeles, lo pega y extrae respuesta.",
   "entry": "python glifos/generacion-contenido/glifos/content-writer/writer.py",
   "actualizable": true,
   "lenguaje": "python3",
@@ -20,16 +20,13 @@
     "fin": {"tipo": "senal", "descripcion": "Escribe pipeline_state/respuesta_ia.txt, senal para clipboard-capturer"}
   },
   "bibliotecario": {
-    "recursos": ["prompts/note_wall.md", "prompts/prompt_writer.txt"],
-    "credenciales": {
-      "note_wall": {"tipo": "env", "keys": ["NOTEWALL_EMAIL", "NOTEWALL_PASS"]},
-      "elevenlabs": {"tipo": "env", "key": "ELEVENLABS_API_KEY"}
-    },
+    "recursos": [],
+    "credenciales": [],
     "permisos": ["read:pipeline_state", "write:pipeline_state"]
   },
   "config": {
     "url_ia": "https://chatgpt.com",
-    "metodo": "CDP (Chrome DevTools Protocol)",
+    "metodo": "PyAutoGUI + portapapeles",
     "timeout_segundos": 60,
     "modos": "browser | mock"
   },

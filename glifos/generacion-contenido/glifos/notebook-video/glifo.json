@@ -1,38 +1,18 @@
 ﻿{
-  "id": "notebook-video",
-  "nombre": "Generador de Video via NotebookLM",
-  "tipo": "externo",
-  "glifo_principal": false,
-  "descripcion": "Abre NotebookLM en Chrome via CDP, crea cuaderno, adjunta guion.txt de pipeline_state, activa creacion de video, descarga a ~/Desktop/videos/ y copia a pipeline_state/video.mp4.",
-  "entry": "python glifos/generacion-contenido/glifos/notebook-video/notebook_video.py",
-  "actualizable": true,
-  "lenguaje": "python3",
-  "inputs": [
-    {"archivo": "pipeline_state/guion.txt", "formato": "texto", "descripcion": "Guion extraido por guion-loader"}
-  ],
-  "outputs": [
-    {"archivo": "pipeline_state/video.mp4", "formato": "video/mp4", "descripcion": "Video generado por NotebookLM"}
-  ],
-  "dependencias": ["guion-loader"],
-  "tiempo": {
-    "modalidad": "dirigido",
-    "inicio": {"trigger": "dependencia", "via": "pipeline_state/guion.txt"},
-    "fin": {"tipo": "senal", "descripcion": "Video descargado a pipeline_state/video.mp4"}
-  },
-  "bibliotecario": {
-    "recursos": [],
-    "credenciales": {
-      "google": {"tipo": "env", "keys": [], "nota": "usa sesion guardada en chrome_data/"}
+    "id": "notebook-video",
+    "nombre": "Generar Video en NotebookLM",
+    "descripcion": "Hace click en Studio + Crear video + Crear via PyAutoGUI (posiciones calibradas)",
+    "glifo_principal": true,
+    "inputs": [],
+    "outputs": [],
+    "tiempo": {
+        "modalidad": "automatico",
+        "inicio": "PDF subido en NotebookLM",
+        "fin": "Video en generacion"
     },
-    "permisos": ["read:pipeline_state", "write:pipeline_state", "write:~/Desktop/videos", "exec:chrome"]
-  },
-  "config": {
-    "url": "https://notebooklm.google.com",
-    "metodo": "CDP (Chrome DevTools Protocol) + WebSocket + JavaScript",
-    "interaccion": "semi-automatica: espera Enter del usuario para pasos manuales",
-    "puerto_cdp": 9333,
-    "canal_youtube_esperado": "glifos"
-  },
-  "panal": "generacion-contenido",
-  "version": "1.0"
+    "bibliotecario": {
+        "recursos": ["gui_utils.py", "guias/notebooklm_calib.json"],
+        "credenciales": [],
+        "permisos": []
+    }
 }

@@ -1,0 +1,11 @@
+# Script para depurar NotebookLM
+# PASO 1: Cierra Chrome completamente
+# PASO 2: Ejecuta esta linea en PowerShell:
+
+& "C:\Program Files\Google\Chrome\Application\chrome.exe" --remote-debugging-port=9444 --remote-allow-origins=* --user-data-dir="$env:TEMP\cdp_debug" --no-first-run https://notebooklm.google.com
+
+# PASO 3: Inicia sesion en NotebookLM si es necesario
+# PASO 4: Cuando estes en la pagina PRINCIPAL de NotebookLM (con los cuadernos visibles),
+#         abre OTRA terminal PowerShell y ejecuta:
+
+python C:\Users\famil\Desktop\glifos\bdgb\glifos\generacion-contenido\debug_dom_final.py

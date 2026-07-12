@@ -1,31 +1,14 @@
 ﻿{
   "version": "3.4",
   "_desc": "Registro maestro de familias, colmenas, panales y glifos.",
-  "nota": "Jerarquia: Familia > Colmena > Panal > Glifo. Cada panal tiene semilla.json. El Tiempo controla la activacion. Protocolo: pipeline_state/ para comunicacion entre glifos.",
-  "familias": [
-    {
-      "id": "nombre-familia",
-      "descripcion": "Agrupa colmenas afines",
-      "colmenas": ["colmena-ejemplo"],
-      "estado": "activo"
-    }
-  ],
-  "colmenas": [
-    {
-      "colmena": "nombre-colmena",
-      "descripcion": "Orquesta panales completos",
-      "panales": ["vigilancia-tendencias"],
-      "estado": "activo",
-      "ruta": "colmenas/nombre-colmena/",
-      "semilla": "colmenas/nombre-colmena/semilla.json"
-    }
-  ],
+  "familias": [],
+  "colmenas": [],
   "panales": [
     {
       "panal": "vigilancia-tendencias",
       "rama": "online",
       "tiempo": "autonomo",
-      "descripcion": "Monitoreo diario de Google Trends, generacion de reportes y alimentacion del nucleo BDGB",
+      "descripcion": "Monitoreo diario de Google Trends, generacion de reportes",
       "estado": "activo",
       "ruta": "vigilancia-tendencias/",
       "semilla": "vigilancia-tendencias/semilla.json",
@@ -35,11 +18,11 @@
       "panal": "generacion-contenido",
       "rama": "online",
       "tiempo": "dirigido",
-      "descripcion": "Busca tendencias, selecciona por autoridad, genera articulo con IA via navegador CDP (Chrome DevTools Protocol), guarda PDF en escritorio. Pipeline de 5 glifos con protocolo pipeline_state/.",
+      "descripcion": "Pipeline: tendencias → articulo IA → PDF → video NotebookLM → YouTube. Automatizacion via PyAutoGUI.",
       "estado": "activo",
       "ruta": "generacion-contenido/",
       "semilla": "generacion-contenido/semilla.json",
-      "glifos": ["trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "cleanup", "generacion-contenido"]
+      "glifos": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "guion-loader", "notebook-abrir", "notebook-vision", "notebook-cuaderno", "notebook-guion", "notebook-video", "notebook-descargar", "notebook-cerrar", "youtube-subir", "cleanup"]
     }
   ],
   "glifos": [
@@ -47,7 +30,7 @@
       "id": "primo",
       "nombre": "Glifo Primo - Trend Tracker",
       "tipo": "nativo",
-      "descripcion": "Compilado en el binario BDGB. Fetch de tendencias, reporte diario, inyeccion en BDGB.",
+      "descripcion": "Compilado en el binario BDGB. Fetch de tendencias.",
       "estado": "activo",
       "actualizable": false,
       "creado": "2026-06-08",
@@ -55,21 +38,14 @@
       "ruta": "vigilancia-tendencias/glifos/primo/",
       "inputs": [],
       "outputs": ["pipeline_state/tendencias.json", "pipeline_state/reporte_primo.txt"],
-      "schedule": {
-        "tipo": "diario",
-        "hora": "08:00"
-      },
-      "metricas": {
-        "ejecuciones": 0,
-        "exitosas": 0,
-        "fallidas": 0
-      }
+      "schedule": {"tipo": "diario", "hora": "08:00"},
+      "metricas": {"ejecuciones": 0, "exitosas": 0, "fallidas": 0}
     },
     {
       "id": "trend-tracker",
       "nombre": "Trend Tracker Diario",
       "tipo": "externo",
-      "descripcion": "Script Python. Google Trends + pytrends, reporte JSON/PDF, resumen semanal.",
+      "descripcion": "Google Trends + pytrends, reporte JSON/PDF.",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-08",
@@ -78,15 +54,9 @@
       "entry": "python vigilancia-tendencias/glifos/trend-tracker/trend_tracker.py",
       "inputs": ["pipeline_state/tendencias.json"],
       "outputs": ["pipeline_state/reporte_tracker.json", "pipeline_state/resumen_semanal.json"],
-      "schedule": {
-        "tipo": "diario",
-        "hora": "08:05"
-      },
+      "schedule": {"tipo": "diario", "hora": "08:05"},
       "dependencias": ["primo"],
-      "metricas": {
-        "ejecuciones": 0,
-        "ultimo_report": null
-      }
+      "metricas": {"ejecuciones": 0, "ultimo_report": null}
     },
     {
       "id": "youtube-automator",
@@ -98,29 +68,30 @@
       "creado": "2026-06-05",
       "panal": null,
       "ruta": "youtube-automator/",
-      "schedule": {
-        "tipo": "semanal",
-        "dia": "lunes",
-        "hora": "09:00"
-      },
-      "pipeline": [
-        "scraper_trends",
-        "bdgb_selecciona_tema",
-        "notebooklm_genera_guion",
-        "godot_genera_video",
-        "youtube_subir"
-      ],
-      "metricas": {
-        "ejecuciones": 0,
-        "ultimo_rank": null,
-        "mejor_video_visitas": null
-      }
+      "schedule": {"tipo": "semanal", "dia": "lunes", "hora": "09:00"},
+      "pipeline": ["scraper_trends", "bdgb_selecciona_tema", "notebooklm_genera_guion", "godot_genera_video", "youtube_subir"],
+      "metricas": {"ejecuciones": 0, "ultimo_rank": null, "mejor_video_visitas": null}
+    },
+    {
+      "id": "estrutura",
+      "nombre": "Verificador de Estructura",
+      "tipo": "externo",
+      "descripcion": "Verifica que todos los directorios, archivos y recursos existen.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/estrutura/",
+      "entry": "python generacion-contenido/glifos/estrutura/estrutura.py",
+      "inputs": [],
+      "outputs": [],
+      "metricas": {"ejecuciones": 0, "exitosas": 0}
     },
     {
       "id": "trend-fetcher",
       "nombre": "Buscador de Tendencias",
       "tipo": "externo",
-      "descripcion": "Obtiene tendencias de internet via Google Trends RSS + pytrends",
+      "descripcion": "Obtiene tendencias via Google Trends RSS + pytrends.",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-09",
@@ -129,17 +100,13 @@
       "entry": "python generacion-contenido/glifos/trend-fetcher/trend_fetcher.py",
       "inputs": [],
       "outputs": ["pipeline_state/tendencias.json"],
-      "metricas": {
-        "ejecuciones": 0,
-        "exitosas": 0,
-        "fallidas": 0
-      }
+      "metricas": {"ejecuciones": 0, "exitosas": 0, "fallidas": 0}
     },
     {
       "id": "authority-selector",
       "nombre": "Selector por Autoridad",
       "tipo": "externo",
-      "descripcion": "Elige la tendencia de mayor autoridad (score + volumen)",
+      "descripcion": "Elige la tendencia de mayor autoridad (score + volumen).",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-09",
@@ -149,16 +116,13 @@
       "inputs": ["pipeline_state/tendencias.json"],
       "outputs": ["pipeline_state/tema_seleccionado.json"],
       "dependencias": ["trend-fetcher"],
-      "metricas": {
-        "ejecuciones": 0,
-        "selecciones": 0
-      }
+      "metricas": {"ejecuciones": 0, "selecciones": 0}
     },
     {
       "id": "content-writer",
       "nombre": "Redactor de Articulos IA",
       "tipo": "externo",
-      "descripcion": "Abre ChatGPT en navegador via Chrome DevTools Protocol (CDP), escribe prompt natural, envia, espera y extrae respuesta. La IA no sabe que es un glifo. Sin API key.",
+      "descripcion": "Abre ChatGPT via PyAutoGUI, escribe prompt, extrae respuesta.",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-09",
@@ -168,16 +132,13 @@
       "inputs": ["pipeline_state/tema_seleccionado.json"],
       "outputs": ["pipeline_state/respuesta_ia.txt"],
       "dependencias": ["authority-selector"],
-      "metricas": {
-        "ejecuciones": 0,
-        "articulos_generados": 0
-      }
+      "metricas": {"ejecuciones": 0, "articulos_generados": 0}
     },
     {
       "id": "clipboard-capturer",
       "nombre": "Capturador de Portapapeles",
       "tipo": "externo",
-      "descripcion": "Lee respuesta_ia.txt (o portapapeles como fallback) y guarda PDF en ~/Desktop/guiones/",
+      "descripcion": "Lee respuesta_ia.txt y genera PDF en ~/Desktop/guiones/.",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-09",
@@ -187,16 +148,157 @@
       "inputs": ["pipeline_state/respuesta_ia.txt"],
       "outputs": ["Desktop/guiones/*.pdf"],
       "dependencias": ["content-writer"],
-      "metricas": {
-        "ejecuciones": 0,
-        "pdfs_generados": 0
-      }
+      "metricas": {"ejecuciones": 0, "pdfs_generados": 0}
+    },
+    {
+      "id": "guion-loader",
+      "nombre": "Cargador de Guion desde PDF",
+      "tipo": "externo",
+      "descripcion": "Extrae texto del PDF mas reciente en ~/Desktop/guiones/.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/guion-loader/",
+      "entry": "python generacion-contenido/glifos/guion-loader/guion_loader.py",
+      "inputs": [],
+      "outputs": ["pipeline_state/guion.txt", "pipeline_state/guion_meta.json"],
+      "dependencias": ["clipboard-capturer"],
+      "metricas": {"ejecuciones": 0, "textos_extraidos": 0}
+    },
+    {
+      "id": "notebook-abrir",
+      "nombre": "Abrir NotebookLM",
+      "tipo": "externo",
+      "descripcion": "Lanza NotebookLM PWA desde acceso directo, autologin PyAutoGUI.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/notebook-abrir/",
+      "entry": "python generacion-contenido/glifos/notebook-abrir/abrir.py",
+      "inputs": [],
+      "outputs": [],
+      "dependencias": ["guion-loader"],
+      "metricas": {"ejecuciones": 0}
+    },
+    {
+      "id": "notebook-vision",
+      "nombre": "Vision de Pantalla",
+      "tipo": "externo",
+      "descripcion": "Escanea pantalla, detecta botones por color, guarda coordenadas.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-17",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/notebook-vision/",
+      "entry": "python generacion-contenido/glifos/notebook-vision/vision.py",
+      "inputs": [],
+      "outputs": ["pipeline_state/vista.json"],
+      "dependencias": ["notebook-abrir"],
+      "metricas": {"ejecuciones": 0}
+    },
+    {
+      "id": "notebook-cuaderno",
+      "nombre": "Crear Cuaderno",
+      "tipo": "externo",
+      "descripcion": "Lee coordenadas de vista.json y clickea.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/notebook-cuaderno/",
+      "entry": "python generacion-contenido/glifos/notebook-cuaderno/cuaderno.py",
+      "inputs": ["pipeline_state/vista.json"],
+      "outputs": [],
+      "dependencias": ["notebook-vision"],
+      "metricas": {"ejecuciones": 0}
+    },
+    {
+      "id": "notebook-guion",
+      "nombre": "Subir PDF a Cuaderno",
+      "tipo": "externo",
+      "descripcion": "Sube PDF al cuaderno via PyAutoGUI.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/notebook-guion/",
+      "entry": "python generacion-contenido/glifos/notebook-guion/guion.py",
+      "inputs": [],
+      "outputs": [],
+      "dependencias": ["notebook-cuaderno"],
+      "metricas": {"ejecuciones": 0}
+    },
+    {
+      "id": "notebook-video",
+      "nombre": "Generar Video en NotebookLM",
+      "tipo": "externo",
+      "descripcion": "Click Studio + Crear video via PyAutoGUI.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/notebook-video/",
+      "entry": "python generacion-contenido/glifos/notebook-video/video.py",
+      "inputs": [],
+      "outputs": [],
+      "dependencias": ["notebook-guion"],
+      "metricas": {"ejecuciones": 0, "videos_generados": 0}
+    },
+    {
+      "id": "notebook-descargar",
+      "nombre": "Descargar Video",
+      "tipo": "externo",
+      "descripcion": "Espera que el usuario descargue el video a ~/Desktop/videos/.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/notebook-descargar/",
+      "entry": "python generacion-contenido/glifos/notebook-descargar/descargar.py",
+      "inputs": [],
+      "outputs": ["pipeline_state/video.mp4"],
+      "dependencias": ["notebook-video"],
+      "metricas": {"ejecuciones": 0}
+    },
+    {
+      "id": "notebook-cerrar",
+      "nombre": "Cerrar y Eliminar Cuaderno",
+      "tipo": "externo",
+      "descripcion": "Elimina cuaderno via PyAutoGUI.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/notebook-cerrar/",
+      "entry": "python generacion-contenido/glifos/notebook-cerrar/cerrar.py",
+      "inputs": [],
+      "outputs": [],
+      "dependencias": ["notebook-descargar"],
+      "metricas": {"ejecuciones": 0}
+    },
+    {
+      "id": "youtube-subir",
+      "nombre": "Subir Video a YouTube",
+      "tipo": "externo",
+      "descripcion": "Abre YouTube Studio en navegador predeterminado, guia al usuario.",
+      "estado": "activo",
+      "actualizable": true,
+      "creado": "2026-06-09",
+      "panal": "generacion-contenido",
+      "ruta": "generacion-contenido/glifos/youtube-subir/",
+      "entry": "python generacion-contenido/glifos/youtube-subir/subir.py",
+      "inputs": ["pipeline_state/video.mp4"],
+      "outputs": ["pipeline_state/publicado.json"],
+      "dependencias": ["notebook-cerrar"],
+      "metricas": {"ejecuciones": 0, "videos_publicados": 0}
     },
     {
       "id": "cleanup",
       "nombre": "Limpiador de Recursos",
       "tipo": "externo",
-      "descripcion": "Cierra Chrome/Edge abiertos por content-writer, libera puertos CDP, elimina temporales del pipeline",
+      "descripcion": "Limpia temporales. No mata Chrome.",
       "estado": "activo",
       "actualizable": true,
       "creado": "2026-06-10",
@@ -205,34 +307,7 @@
       "entry": "python generacion-contenido/glifos/cleanup/cleaner.py",
       "inputs": [],
       "outputs": [],
-      "dependencias": ["clipboard-capturer"],
-      "metricas": {
-        "ejecuciones": 0,
-        "cierres": 0
-      }
-    },
-    {
-      "id": "generacion-contenido",
-      "nombre": "Orquestador Generacion de Contenido",
-      "tipo": "nativo",
-      "descripcion": "Orquestador nativo C que ejecuta el pipeline completo del panal en secuencia",
-      "estado": "activo",
-      "actualizable": false,
-      "creado": "2026-06-09",
-      "panal": "generacion-contenido",
-      "ruta": "src/glifo.c",
-      "pipeline": [
-        "trend-fetcher",
-        "authority-selector",
-        "content-writer",
-        "clipboard-capturer",
-        "cleanup"
-      ],
-      "metricas": {
-        "ejecuciones": 0,
-        "exitosas": 0,
-        "fallidas": 0
-      }
+      "metricas": {"ejecuciones": 0, "cierres": 0}
     }
   ]
 }

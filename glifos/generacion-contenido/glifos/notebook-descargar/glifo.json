@@ -1,0 +1,18 @@
+{
+    "id": "notebook-descargar",
+    "nombre": "Descargar Video",
+    "descripcion": "Espera a que aparezca un video en ~/Desktop/videos/ y lo copia a pipeline_state",
+    "glifo_principal": true,
+    "inputs": [],
+    "outputs": ["pipeline_state/video.mp4"],
+    "tiempo": {
+        "modalidad": "input-manual",
+        "inicio": "Generacion de video terminada",
+        "fin": "Video descargado a pipeline_state"
+    },
+    "bibliotecario": {
+        "recursos": [],
+        "credenciales": [],
+        "permisos": ["escritura ~/Desktop/videos/"]
+    }
+}

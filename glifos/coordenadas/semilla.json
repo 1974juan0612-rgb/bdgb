@@ -1,0 +1,69 @@
+{
+  "id": "coordenadas",
+  "nombre": "Lector de Coordenadas de Pantalla",
+  "tipo": "panal",
+  "descripcion": "Overlay transparente click-through. Registra coordenadas de clics en pantalla + tiempos de espera. Generico, no ligado a ninguna aplicacion.",
+  "estado": "activo",
+  "version": "1.0",
+  "rama": "local",
+  "creado": "2026-06-24",
+
+  "_regla": "Esta semilla es la autoridad del panal.",
+  "_clasificacion": "Primo=codigo original. Semilla=este archivo. Comun=glifos operativos.",
+
+  "tiempo": {
+    "tipo": "dirigido",
+    "modalidad": "encargo",
+    "descripcion": "Se ejecuta a solicitud del usuario para mapear coordenadas de una aplicacion"
+  },
+
+  "config": {
+    "pipeline": ["coordenadas-reader"]
+  },
+
+  "glifos": [
+    {
+      "id": "coordenadas-reader",
+      "nombre": "Lector de Coordenadas",
+      "tipo": "externo",
+      "entry": "python glifos/coordenadas/glifos/coordenadas-reader/reader.py",
+      "lenguaje": "python3",
+      "actualizable": true,
+      "descripcion": "Overlay transparente que muestra coordenadas en vivo. Click registra posicion + tiempo. Click-through (no bloquea la aplicacion detras).",
+      "inputs": [],
+      "outputs": ["pipeline_state/coordenadas.json"],
+      "glifo_json": "glifos/coordenadas-reader/glifo.json"
+    }
+  ],
+
+  "relaciones": [],
+
+  "pipeline": {
+    "orden": [
+      {
+        "paso": 0,
+        "glifo": "coordenadas-reader",
+        "accion": "lectura",
+        "args": [],
+        "descripcion": "Abrir overlay, registrar clicks con tiempos, guardar JSON"
+      }
+    ]
+  },
+
+  "datos_panal": {
+    "teclas": {
+      "click_izquierdo": "Registra coordenada + pide tiempo de espera",
+      "q": "Guarda y cierra"
+    },
+    "output": "pipeline_state/coordenadas.json",
+    "formato_output": {
+      "puntos": [{"x": "int", "y": "int", "timeout": "string", "timestamp": "string"}],
+      "screen": {"w": "int", "h": "int"}
+    }
+  },
+
+  "metricas": {
+    "ejecuciones": 0,
+    "puntos_registrados": 0
+  }
+}

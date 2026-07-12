@@ -1,0 +1,18 @@
+{
+    "id": "notebook-cerrar",
+    "nombre": "Cerrar y Eliminar Cuaderno",
+    "descripcion": "Elimina cuaderno via PyAutoGUI (menu opciones + eliminar + confirmar)",
+    "glifo_principal": true,
+    "inputs": [],
+    "outputs": [],
+    "tiempo": {
+        "modalidad": "automatico",
+        "inicio": "Video descargado de NotebookLM",
+        "fin": "Cuaderno eliminado"
+    },
+    "bibliotecario": {
+        "recursos": ["gui_utils.py", "guias/notebooklm_calib.json"],
+        "credenciales": [],
+        "permisos": []
+    }
+}

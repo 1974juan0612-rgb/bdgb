@@ -8,6 +8,7 @@
 #include "agent.h"
 #include "glifo.h"
 #include "mmia.h"
+#include "rae.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -172,6 +173,7 @@ static int cmd_interactive(void) {
     learning_init(data_path);
     nlp_set_data_path(data_path);
     nlp_init();
+    rae_init(data_path);
     glifo_init();
 
     init_system();
@@ -212,12 +214,26 @@ int main(int argc, char *argv[]) {
         argc -= 2;
     }
 
+    /* asegurar que el directorio de datos existe */
+    {
+#ifdef _WIN32
+        char mkcmd[1024];
+        snprintf(mkcmd, sizeof(mkcmd), "if not exist \"%s\" mkdir \"%s\"", data_path, data_path);
+        system(mkcmd);
+#else
+        char mkcmd[1024];
+        snprintf(mkcmd, sizeof(mkcmd), "mkdir -p \"%s\"", data_path);
+        system(mkcmd);
+#endif
+    }
+
     bdgb_init(data_path);
     semantic_init(data_path);
     concept_graph_init(data_path);
     learning_init(data_path);
     nlp_set_data_path(data_path);
     nlp_init();
+    rae_init(data_path);
     glifo_init();
 
     if (argc < 2) return cmd_interactive();
@@ -251,6 +267,22 @@ int main(int argc, char *argv[]) {
     if (strcmp(argv[1], "--chat") == 0) return mmia_run_interactive();
     if (strcmp(argv[1], "--mmia") == 0 && argc >= 3) return mmia_process_direct(argv[2]);
 
+    if (strcmp(argv[1], "--rae") == 0 && argc >= 3) {
+        FraseAnalizada fa;
+        rae_analizar(argv[2], &fa);
+        rae_imprimir_frase(&fa);
+        return 0;
+    }
+    if (strcmp(argv[1], "--rae-aprender") == 0 && argc >= 3) {
+        int n = rae_aprender_de_texto(argv[2]);
+        printf("{\"aprendidas\":%d}\n", n);
+        return 0;
+    }
+    if (strcmp(argv[1], "--rae-vocab") == 0) {
+        printf("{\"terminos_totales\":%d}\n", nlp_term_count());
+        return 0;
+    }
+
     if (strcmp(argv[1], "--encrypt") == 0 && argc >= 4) {
         return bdgb_encrypt_file(argv[2], argv[3], argc > 4 ? argv[4] : "bdgb-default-key");
     }
@@ -275,6 +307,9 @@ int main(int argc, char *argv[]) {
     fprintf(stderr, "  (sin args)     modo interactivo\n");
     fprintf(stderr, "  --chat         MMIA: modo consola interactiva\n");
     fprintf(stderr, "  --mmia <txt>   MMIA: tarea directa\n");
+    fprintf(stderr, "  --rae <txt>    RAE: analisis sintactico-semantico\n");
+    fprintf(stderr, "  --rae-aprender <txt>  RAE: aprende palabras nuevas del texto\n");
+    fprintf(stderr, "  --rae-vocab    RAE: muestra total de terminos conocidos\n");
     fprintf(stderr, "  --search <q>   busqueda NLP, salida JSON\n");
     fprintf(stderr, "  --export-nodes dump JSON de todos los nodos\n");
     fprintf(stderr, "  --add-concept <n> <c> <w> <r>\n");

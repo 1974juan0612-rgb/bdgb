@@ -1,0 +1,15 @@
+{
+  "app": "NotebookLM",
+  "version": "2026-06",
+  "url": "https://notebooklm.google.com",
+  "profile": "Profile 2",
+  "app_id": "gjcmcplpgihbecacndmmbaenpfgimlec",
+  "automation": "PyAutoGUI",
+
+  "notas": {
+    "flujo": "1. Crear nuevo cuaderno > 2. Subir PDF (guion) > 3. Esperar procesamiento > 4. Click Studio > 5. Crear video > Crear > 6. Esperar ~10min > 7. Descargar video",
+    "calibracion": "Ejecutar calibrar.py para guardar coordenadas de cada boton. Las posiciones se guardan en notebooklm_calib.json",
+    "login": "Profile 2 mantiene la sesion. Si expira, abrir.py hace autologin con GOOGLE_PASS via PyAutoGUI",
+    "dependencias": "pip install pyautogui pillow pygetwindow"
+  }
+}

@@ -1,0 +1,19 @@
+{
+    "id": "notebook-abrir",
+    "nombre": "Abrir NotebookLM",
+    "descripcion": "Lanza NotebookLM PWA desde acceso directo del escritorio, autologin via PyAutoGUI",
+    "glifo_principal": true,
+    "inputs": [],
+    "outputs": [],
+    "tiempo": {
+        "modalidad": "automatico",
+        "inicio": "Guion cargado",
+        "fin": "NotebookLM listo"
+    },
+    "bibliotecario": {
+        "recursos": ["gui_launch.py", "gui_utils.py"],
+        "credenciales": ["GOOGLE_PASS"],
+        "permisos": ["red"]
+    }
+}
+}

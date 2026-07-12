@@ -3,7 +3,7 @@
   "nombre": "Orquestador Generacion de Contenido",
   "tipo": "nativo",
   "glifo_principal": true,
-  "descripcion": "Orquestador generico compilado en binario BDGB. Lee semilla.json del panal, ejecuta pipeline declarado en config.pipeline o pipeline.orden secuencialmente. Cada paso ejecuta su entry, maneja errores como ERROR o WARN (cleanup).",
+  "descripcion": "Orquestador generico. Lee semilla.json del panal, ejecuta pipeline secuencialmente. Automatiza NotebookLM via PyAutoGUI (coordenadas calibradas).",
   "entry": "bdgb --glifo-run generacion-contenido",
   "actualizable": false,
   "lenguaje": "c99",
@@ -16,15 +16,14 @@
     "fin": {"tipo": "senal", "descripcion": "Pipeline completado, cleanup ejecutado, proceso termina"}
   },
   "bibliotecario": {
-    "recursos": ["prompts/note_wall.md", "prompts/prompt_writer.txt"],
+    "recursos": [],
     "credenciales": {
-      "note_wall": {"tipo": "env", "keys": ["NOTEWALL_EMAIL", "NOTEWALL_PASS"]},
-      "elevenlabs": {"tipo": "env", "key": "ELEVENLABS_API_KEY"}
+      "google": {"tipo": "env", "keys": ["GOOGLE_PASS"]}
     },
-    "permisos": ["read:glifos/generacion-contenido", "exec:python3", "exec:chrome"]
+    "permisos": ["read:glifos/generacion-contenido", "exec:python"]
   },
   "config": {
-    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "guion-loader", "notebook-video", "youtube-publisher", "cleanup"],
+    "pipeline": ["estrutura", "trend-fetcher", "authority-selector", "content-writer", "clipboard-capturer", "guion-loader", "notebook-abrir", "notebook-cuaderno", "notebook-guion", "notebook-video", "notebook-descargar", "notebook-cerrar", "youtube-subir", "cleanup"],
     "tipo_orquestacion": "generica — lee semilla.json del panal",
     "formatos_soporte": ["config.pipeline (array strings)", "pipeline.orden (array objetos)", "glifos (orden declaracion)"],
     "manejo_errores": "ERROR detiene pipeline, WARN continua (cleanup)"

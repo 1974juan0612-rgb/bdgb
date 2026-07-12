@@ -14,6 +14,18 @@
 #define REL_FUNCION     3
 #define REL_CAUSA       4
 
+#define REL_SUSTANTIVO  5
+#define REL_VERBO       6
+#define REL_ADJETIVO    7
+#define REL_ADVERBIO    8
+#define REL_ARTICULO    9
+#define REL_PREPOSICION 10
+#define REL_PRONOMBRE   11
+#define REL_PERTENECE   12
+#define REL_CONTIENE    13
+#define REL_SINONIMO    14
+#define REL_ANTONIMO    15
+
 typedef struct {
     uint8_t  node_id;
     uint16_t concept_id;

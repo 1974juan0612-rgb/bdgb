@@ -1,0 +1,18 @@
+{
+    "id": "notebook-guion",
+    "nombre": "Subir PDF a Cuaderno",
+    "descripcion": "Sube PDF fuente al cuaderno via PyAutoGUI (click upload + dialogo nativo)",
+    "glifo_principal": true,
+    "inputs": [],
+    "outputs": [],
+    "tiempo": {
+        "modalidad": "automatico",
+        "inicio": "Cuaderno abierto en NotebookLM",
+        "fin": "PDF subido como fuente"
+    },
+    "bibliotecario": {
+        "recursos": ["gui_utils.py", "guias/notebooklm_calib.json"],
+        "credenciales": [],
+        "permisos": []
+    }
+}

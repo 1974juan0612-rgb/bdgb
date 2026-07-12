@@ -8,13 +8,14 @@ import os, sys, json, subprocess, time, glob
 
 PANAL_DIR = os.path.dirname(os.path.abspath(__file__))
 STATE_DIR = os.path.join(PANAL_DIR, "pipeline_state")
+BDGB_ROOT = os.environ.get("BDGB_ROOT", os.path.dirname(os.path.dirname(PANAL_DIR)))
 
 def log(msg):
     print(f"[PIPELINE] {msg}")
 
 def run_command(cmd):
     log(cmd)
-    r = subprocess.run(cmd, shell=True, capture_output=False)
+    r = subprocess.run(cmd, shell=True, capture_output=False, cwd=BDGB_ROOT)
     return r.returncode
 
 def find_entry(semilla, glifo_id):
